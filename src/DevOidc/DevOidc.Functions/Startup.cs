@@ -18,7 +18,7 @@ namespace DevOidc.Functions
             builder.Services.AddMemoryCache();
 
             builder.Services.AddSingleton<ITenantService, TenantService>();
-            builder.Services.AddSingleton<IUserSessionService, UserSessionService>();
+            builder.Services.AddSingleton<IUserSessionService, InMemoryUserSessionService>();
             // builder.Services.AddSingleton<IJwtService, HS256JwtService>();
             builder.Services.AddSingleton<IJwtService, RS256JwtService>();
 

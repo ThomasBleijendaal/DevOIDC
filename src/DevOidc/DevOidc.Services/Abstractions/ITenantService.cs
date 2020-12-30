@@ -9,5 +9,4 @@ namespace DevOidc.Services.Abstractions
 
         Task<UserDto?> AuthenticateUserAsync(string tenantId, string clientId, string userName, string password);
     }
-
 }

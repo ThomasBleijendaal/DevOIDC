@@ -25,8 +25,7 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequest req,
             string tenantId,
             string clientId,
-            string scope,
-            ILogger log)
+            string scope)
         {
             try
             {

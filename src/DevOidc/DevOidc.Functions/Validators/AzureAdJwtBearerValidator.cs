@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols;
@@ -20,7 +19,6 @@ namespace DevOidc.Functions.Validators
         private readonly ILogger<AzureAdJwtBearerValidator> _logger;
 
         public AzureAdJwtBearerValidator(
-            IConfiguration configuration,
             IHttpContextAccessor httpContextAccessor,
             ILogger<AzureAdJwtBearerValidator> logger)
         {
@@ -53,11 +51,11 @@ namespace DevOidc.Functions.Validators
 
             try
             {
+                IdentityModelEventSource.ShowPII = true;
+
                 var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
 
                 var tokenValidator = new JwtSecurityTokenHandler();
-
-                IdentityModelEventSource.ShowPII = true;
 
                 var validationParameters = new TokenValidationParameters
                 {

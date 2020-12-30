@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using DevOidc.Core.Models;
 using DevOidc.Services.Abstractions;
 using Jose;
 using Org.BouncyCastle.Crypto;
@@ -58,7 +59,7 @@ bga1nySDI5Zvzbxr10rHLo9jRjz3AtU/jzKE9AJGl11qJRWvozy1dmDSsOseEijo
         public string CreateJwt(Dictionary<string, object> payload)
         {
             var localPayload = payload.ToDictionary(x => x.Key, x => x.Value);
-            localPayload.Add("exp", DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            localPayload.Add("exp", DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds());
 
             using var privateKey = new StringReader(PrivateKey);
 
@@ -85,7 +86,29 @@ bga1nySDI5Zvzbxr10rHLo9jRjz3AtU/jzKE9AJGl11qJRWvozy1dmDSsOseEijo
             return jwt;
         }
 
-        public string GetPublicKey() => PublicKey.Replace("-----BEGIN PUBLIC KEY-----", "").Replace("-----END PUBLIC KEY-----", "").Replace("\r", "").Replace("\n", "");
+        public KeyDto GetPublicKey()
+        {
+            using var publicKey = new StringReader(PublicKey);
+
+            var ppemReader = new PemReader(publicKey);
+
+            if (ppemReader.ReadObject() is RsaKeyParameters rkp)
+            {
+                return new KeyDto
+                {
+                    Algorithm = "RS256",
+                    Exponent = Convert.ToBase64String(rkp.Exponent.ToByteArrayUnsigned()),
+                    KeyType = "RSA",
+                    Id = "default-kid",
+                    Modulus = Convert.ToBase64String(rkp.Modulus.ToByteArrayUnsigned()),
+                    Use = "sig"
+                };
+            }
+            else
+            {
+                return new KeyDto();
+            }
+        }
 
         private class Password : IPasswordFinder
         {

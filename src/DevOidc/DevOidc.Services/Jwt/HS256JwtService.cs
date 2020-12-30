@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using DevOidc.Core.Models;
 using DevOidc.Services.Abstractions;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -38,7 +39,7 @@ namespace DevOidc.Services.Jwt
             return $"{headerBase64}.{payloadBase64}.{signature}";
         }
 
-        public string GetPublicKey() => "";
+        public KeyDto GetPublicKey() => new KeyDto();
 
         private byte[] HashHMAC(byte[] key, byte[] message)
         {

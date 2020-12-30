@@ -44,24 +44,23 @@ namespace DevOidc.Functions.Functions
         [FunctionName(nameof(GetKeys))]
         public IActionResult GetKeys(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequest req,
-            string tenantId,
-            ILogger log)
+            string tenantId)
         {
+            var key = _jwtService.GetPublicKey();
+
             return new OkObjectResult(new KeysResponseModel
             {
                 Keys = new[]
                 {
                     new KeyResponseModel
                     {
-                        Kty = "RSA",
-                        Alg = "RS256",
-                        Use = "sig",
-                        Kid = "default-kid", // TODO
-                        //X5t = "default-kid", // TODO
-                        N = _jwtService.GetPublicKey(), // TODO
-                        E = "AQAB", // TODO
-                        //X5c = new [] { _jwtService.GetPublicKey() }, // TODO
-                        Issuer = $"{BaseUrl}{tenantId}" // TODO
+                        Kty = key.KeyType,
+                        Alg = key.Algorithm,
+                        Use = key.Use,
+                        Kid = key.Id,
+                        N = key.Modulus,
+                        E = key.Exponent,
+                        Issuer = $"{BaseUrl}{tenantId}"
                     }
                 }
             });

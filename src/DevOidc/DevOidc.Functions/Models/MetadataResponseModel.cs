@@ -60,15 +60,5 @@ namespace DevOidc.Functions.Models
 
         [JsonProperty("cloud_instance_name")]
         public string? CloudInstanceName { get; set; }
-
-        [JsonProperty("cloud_graph_host_name")]
-        public string? CloudGraphHostName { get; set; }
-
-        [JsonProperty("msgraph_host")]
-        public string? MsgraphHost { get; set; }
-
-        [JsonProperty("rbac_url")]
-        public string? RbacUrl { get; set; }
     }
-
 }

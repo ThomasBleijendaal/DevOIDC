@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Logging;
 
 namespace DevOidc.Functions.Functions
 {
@@ -25,8 +24,7 @@ namespace DevOidc.Functions.Functions
         [FunctionName(nameof(GetTokenByCode))]
         public async Task<IActionResult> GetTokenByCode(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequest req,
-            string tenantId,
-            ILogger log)
+            string tenantId)
         {
             var form = await req.ReadFormAsync();
             var grantType = form["grant_type"].ToString();
@@ -43,13 +41,13 @@ namespace DevOidc.Functions.Functions
                 return new BadRequestResult();
             }
 
-            var claims = await _userSessionService.GetClaimsByCodeAsync(code);
+            var claims = await _userSessionService.GetClaimsByCodeAsync(tenantId, code);
             if (claims == null)
             {
                 return new NotFoundResult();
             }
 
-            var refreshToken = await _userSessionService.StoreClaimsAsync(claims);
+            var refreshToken = await _userSessionService.StoreClaimsAsync(tenantId, claims);
             var accessToken = _jwtService.CreateJwt(claims);
 
             return new OkObjectResult(new TokenResponseModel

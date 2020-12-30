@@ -6,9 +6,9 @@ namespace DevOidc.Services.Abstractions
 {
     public interface IUserSessionService
     {
-        Task<string> StoreClaimsAsync(UserDto user, ClientDto client, ScopeDto scope);
-        Task<string> StoreClaimsAsync(Dictionary<string, object> claims);
-        Task<Dictionary<string, object>?> GetClaimsByCodeAsync(string code);
+        Task<string> StoreClaimsAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope);
+        Task<string> StoreClaimsAsync(string tenantId, Dictionary<string, object> claims);
+        Task<Dictionary<string, object>?> GetClaimsByCodeAsync(string tenantId, string code);
     }
 
 }

@@ -11,7 +11,6 @@ using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Logging;
 
 namespace DevOidc.Functions.Functions
 {
@@ -31,8 +30,7 @@ namespace DevOidc.Functions.Functions
         [FunctionName(nameof(Authorize))]
         public async Task<HttpResponseMessage> Authorize(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequest req,
-            string tenantId,
-            ILogger log)
+            string tenantId)
         {
             var clientId = req.Query["client_id"];
             var redirectUri = req.Query["redirect_uri"];
@@ -117,8 +115,7 @@ namespace DevOidc.Functions.Functions
         [FunctionName(nameof(AuthorizePostback))]
         public async Task<HttpResponseMessage> AuthorizePostback(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequest req,
-            string tenantId,
-            ILogger log)
+            string tenantId)
         {
             var form = await req.ReadFormAsync();
 
@@ -143,7 +140,7 @@ namespace DevOidc.Functions.Functions
                 return RedirectToLogin("invalid_login", "Username or password is incorrect.");
             }
 
-            var code = await _userSessionService.StoreClaimsAsync(user, tenantClient, scope);
+            var code = await _userSessionService.StoreClaimsAsync(tenantId, user, tenantClient, scope);
 
             return RedirectToClientApp();
 

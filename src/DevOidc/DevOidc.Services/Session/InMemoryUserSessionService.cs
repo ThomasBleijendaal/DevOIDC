@@ -8,28 +8,30 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DevOidc.Services.Session
 {
-    public class UserSessionService : IUserSessionService
+    public class InMemoryUserSessionService : IUserSessionService
     {
         private readonly IMemoryCache _memoryCache;
 
-        public UserSessionService(IMemoryCache memoryCache)
+        public InMemoryUserSessionService(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
         }
 
-        public async Task<Dictionary<string, object>?> GetClaimsByCodeAsync(string code)
+        public async Task<Dictionary<string, object>?> GetClaimsByCodeAsync(string tenantId, string code)
         {
             await Task.Delay(100);
 
-            if (_memoryCache.TryGetValue<Dictionary<string, object>>(code, out var claims))
+            if (_memoryCache.TryGetValue<Dictionary<string, object>>($"{tenantId}{code}", out var claims))
             {
+                _memoryCache.Remove(code);
+
                 return claims;
             }
 
             return default;
         }
 
-        public async Task<string> StoreClaimsAsync(UserDto user, ClientDto client, ScopeDto scope)
+        public async Task<string> StoreClaimsAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope)
         {
             var dict = new Dictionary<string, object>
             {
@@ -44,14 +46,14 @@ namespace DevOidc.Services.Session
                 dict.Add(claim.Key, claim.Value);
             }
 
-            return await StoreClaimsAsync(dict);
+            return await StoreClaimsAsync(tenantId, dict);
         }
 
-        public async Task<string> StoreClaimsAsync(Dictionary<string, object> claims)
+        public async Task<string> StoreClaimsAsync(string tenantId, Dictionary<string, object> claims)
         {
             await Task.Delay(100);
 
-            var code = Base64UrlEncoder.Encode(Guid.NewGuid().ToByteArray());
+            var code = $"{tenantId}{Base64UrlEncoder.Encode(Guid.NewGuid().ToByteArray())}";
 
             _memoryCache.Set(code, claims);
 
