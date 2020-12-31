@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace DevOidc.Functions.Abstractions
 {
     public interface IAuthenticationValidator
     {
-        Task EnsureValidUserAsync(string tenantId, string clientId, string scope);
+        Task<ClaimsPrincipal> GetValidUserAsync(string tenantId, string clientId, string scope);
     }
 }

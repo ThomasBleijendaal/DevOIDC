@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DevOidc.Core.Models
 {
@@ -6,6 +7,6 @@ namespace DevOidc.Core.Models
     {
         public string TenantId { get; set; }
 
-        public List<UserDto> Users { get; set; }
+        public TimeSpan TokenLifetime { get; set; }
     }
 }

@@ -6,7 +6,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using DevOidc.Core.Extensions;
 using DevOidc.Core.Models;
+using DevOidc.Functions.Models.Request;
 using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
@@ -17,14 +19,14 @@ namespace DevOidc.Functions.Functions
     public class InteractionFunctions
     {
         private readonly ITenantService _tenantService;
-        private readonly IUserSessionService _userSessionService;
+        private readonly ISessionService _sessionService;
 
         public InteractionFunctions(
             ITenantService tenantService,
-            IUserSessionService userSessionService)
+            ISessionService sessionService)
         {
             _tenantService = tenantService;
-            _userSessionService = userSessionService;
+            _sessionService = sessionService;
         }
 
         [FunctionName(nameof(Authorize))]
@@ -32,40 +34,35 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequest req,
             string tenantId)
         {
-            var clientId = req.Query["client_id"];
-            var redirectUri = req.Query["redirect_uri"];
-            var scopes = req.Query["scope"].ToString();
-            var responseMode = req.Query["response_mode"];
-            var responseType = req.Query["response_type"];
-            var error = req.Query["error"].ToString();
+            var requestModel = req.BindModelToQuery<OidcAuthorizeRequestModel>();
 
-            var customScopes = scopes?.Split(" ").Except(new[] { "openid", "offline_access" });
-
-            var message = error switch
+            var message = requestModel.Error switch
             {
                 "invalid_request" => "<p>The configuration send in POST is incorrect.</p>",
                 "invalid_login" => "<p>The username or password is incorrect.</p>",
                 _ => default
             };
 
-            var tenantClient = await _tenantService.GetClientAsync(tenantId, clientId);
-
             string body;
-            if (tenantClient == null)
+            if (string.IsNullOrWhiteSpace(requestModel.ClientId))
             {
-                body = $"<p>Client <code>{clientId}</code> not found.</p>";
+                body = "<p>Missing <code>client_id</code>.</p>";
             }
-            else if (customScopes?.Except(tenantClient.Scopes.Select(x => x.ScopeId)) is IEnumerable<string> unsupportedScopes && unsupportedScopes.Any())
+            else if (await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto tenantClient)
             {
-                body = $"<p>Client <code>{clientId}</code> does not support scope <code>{string.Join(" ", unsupportedScopes)}</code>.</p>";
+                body = $"<p>Client <code>{requestModel.ClientId}</code> not found.</p>";
             }
-            else if (!tenantClient.RedirectUris.Contains(redirectUri))
+            else if (requestModel.CustomScopes?.Except(tenantClient.Scopes.Select(x => x.ScopeId)) is IEnumerable<string> unsupportedScopes && unsupportedScopes.Any())
             {
-                body = $"<p>Client <code>{clientId}</code> does have a redirect uri <code>{redirectUri}</code>.</p>";
+                body = $"<p>Client <code>{requestModel.ClientId}</code> does not support scope <code>{string.Join(" ", unsupportedScopes)}</code>.</p>";
             }
-            else if (responseType != "code")
+            else if (string.IsNullOrWhiteSpace(requestModel.RedirectUri) || !tenantClient.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                body = $"<p>Client <code>{clientId}</code> only supports <code>response_type=code</code>.</p>";
+                body = $"<p>Client <code>{requestModel.ClientId}</code> does have a redirect uri <code>{requestModel.RedirectUri}</code>.</p>";
+            }
+            else if (requestModel.ResponseType != "code")
+            {
+                body = $"<p>Client <code>{requestModel.ClientId}</code> only supports <code>response_type=code</code>.</p>";
             }
             else
             {
@@ -73,16 +70,16 @@ namespace DevOidc.Functions.Functions
 <fieldset>
 <legend>Settings</legend>
 <label>client_id:</label>
-<input readonly name=""client_id"" value=""{clientId}"" />
+<input readonly name=""client_id"" value=""{requestModel.ClientId}"" />
 <br />
 <label>redirect_uri:</label>
-<input readonly name=""redirect_uri"" value=""{redirectUri}"" />
+<input readonly name=""redirect_uri"" value=""{requestModel.RedirectUri}"" />
 </br />
 <label>scope:</label>
-<input readonly name=""scope"" value=""{scopes}"" />
+<input readonly name=""scope"" value=""{requestModel.Scope}"" />
 <br />
 <label>response_mode:</label>
-<input readonly name=""response_mode"" value=""{responseMode}"" />
+<input readonly name=""response_mode"" value=""{requestModel.ResponseMode}"" />
 </fieldset>
 
 <fieldset>
@@ -105,6 +102,17 @@ namespace DevOidc.Functions.Functions
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(@$"<html>
+<head>
+<style>
+* {{font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif, ""Apple Color Emoji"", ""Segoe UI Emoji"", ""Segoe UI Symbol"";}}
+body {{ background: #ddd;  }}
+fieldset {{ margin: 2rem; background: #fff; border: 1px solid #ccc; }}
+legend {{ background: #ccc; }}
+label {{ display: block; margin: .2rem; float: left; width: 25%; }}
+input {{ display: block; margin: .2rem; float: right; width: 70%; }}
+button {{ margin: .2rem; }}
+</style>
+</head>
 <body>
 {body}
 </body>
@@ -117,30 +125,26 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequest req,
             string tenantId)
         {
-            var form = await req.ReadFormAsync();
+            var requestModel = req.BindModelToForm<OidcAuthorizeRequestModel>();
 
-            var clientId = form["client_id"];
-            var redirectUri = form["redirect_uri"];
-            var scopes = form["scope"].ToString();
-            var resonseMode = form["resonse_mode"];
-            var username = form["username"];
-            var password = form["password"];
-
-            var tenantClient = await _tenantService.GetClientAsync(tenantId, clientId);
-            if (tenantClient == null ||
-                tenantClient.Scopes.FirstOrDefault(x => scopes.Contains(x.ScopeId)) is not ScopeDto scope || 
-                !tenantClient.RedirectUris.Contains(redirectUri))
+            if (string.IsNullOrWhiteSpace(requestModel.ClientId) ||
+                string.IsNullOrWhiteSpace(requestModel.RedirectUri) ||
+                string.IsNullOrWhiteSpace(requestModel.UserName) ||
+                string.IsNullOrWhiteSpace(requestModel.Password) ||
+                await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
+                client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId)) is not ScopeDto scope ||
+                !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
                 return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.");
             }
 
-            var user = await _tenantService.AuthenticateUserAsync(tenantId, clientId, username, password);
+            var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
             if (user == null)
             {
                 return RedirectToLogin("invalid_login", "Username or password is incorrect.");
             }
 
-            var code = await _userSessionService.StoreClaimsAsync(tenantId, user, tenantClient, scope);
+            var code = await _sessionService.CreateSessionAsync(tenantId, user, client, scope);
 
             return RedirectToClientApp();
 
@@ -148,14 +152,14 @@ namespace DevOidc.Functions.Functions
             {
                 var response = new HttpResponseMessage(HttpStatusCode.Found);
                 response.Headers.Add("X-Code", code);
-                response.Headers.Location = new Uri(new Uri(redirectUri), $"{(resonseMode == "fragment" ? "#" : "?")}code={code}");
+                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}");
                 return response;
             }
 
             HttpResponseMessage RedirectToLogin(string error, string errorDescription)
             {
                 var response = new HttpResponseMessage(HttpStatusCode.Found);
-                response.Headers.Location = new Uri(new Uri($"{req.Scheme}://{req.Host}{req.Path}"), $"?client_id={clientId}&redirect_uri={redirectUri}&scope={scopes}&error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}");
+                response.Headers.Location = new Uri(new Uri($"{req.Scheme}://{req.Host}{req.Path}"), $"?client_id={requestModel.ClientId}&redirect_uri={requestModel.RedirectUri}&scope={requestModel.Scope}&response_type={requestModel.ResponseType}&error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}");
                 return response;
             }
         }

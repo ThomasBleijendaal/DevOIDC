@@ -1,13 +1,11 @@
 ﻿using System;
-using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using DevOidc.Functions.Abstractions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using DevOidc.Functions.Abstractions;
 
 namespace DevOidc.Functions.Functions
 {
@@ -29,9 +27,9 @@ namespace DevOidc.Functions.Functions
         {
             try
             {
-                await _authenticationValidator.EnsureValidUserAsync(tenantId, clientId, scope);
+                var user = await _authenticationValidator.GetValidUserAsync(tenantId, clientId, scope);
 
-                return new OkResult();
+                return new OkObjectResult(user.Claims.ToDictionary(x => x.Type, x => x.Value));
             }
             catch (Exception ex)
             {

@@ -1,52 +1,57 @@
-﻿using DevOidc.Functions.Models;
+﻿using System.Threading.Tasks;
+using DevOidc.Core.Extensions;
+using DevOidc.Functions.Models.Response;
 using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Extensions.Logging;
 
 namespace DevOidc.Functions.Functions
 {
     public class DiscoveryFunctions
     {
-        public const string BaseUrl = "http://localhost:7071/";
-        private readonly IJwtService _jwtService;
+        private readonly ITenantService _tenantService;
 
-        public DiscoveryFunctions(IJwtService jwtService)
+        public DiscoveryFunctions(ITenantService tenantService)
         {
-            _jwtService = jwtService;
+            _tenantService = tenantService;
         }
 
         [FunctionName(nameof(GetMetadata))]
         public IActionResult GetMetadata(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/.well-known/openid-configuration")] HttpRequest req,
-            string tenantId,
-            ILogger log)
+            string tenantId)
         {
             return new OkObjectResult(new MetadataResponseModel
             {
-                TokenEndpoint = $"{BaseUrl}{tenantId}/token",
+                TokenEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/token",
                 TokenEndpointAuthMethodsSupported = new[] { "private_key_jwt" },
-                JwksUri = $"{BaseUrl}{tenantId}/discovery/keys",
+                JwksUri = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/discovery/keys",
                 ResponseModesSupported = new[] { "query", "fragment" },
                 SubjectTypesSupported = new[] { "pairwise" },
                 IdTokenSigningAlgValuesSupported = new[] { "RS256" },
                 ResponseTypesSupported = new[] { "code" },
                 ScopesSupported = new[] { "openid", "offline_access" },
-                Issuer = $"{BaseUrl}{tenantId}",
-                AuthorizationEndpoint = $"{BaseUrl}{tenantId}/authorize",
+                Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}",
+                AuthorizationEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/authorize",
                 ClaimsSupported = new[] { "sub", "iss", "aud", "exp", "email" },
                 TenantRegionScope = "EU"
             });
         }
 
-        [FunctionName(nameof(GetKeys))]
-        public IActionResult GetKeys(
+        [FunctionName(nameof(GetKeysAsync))]
+        public async Task<IActionResult> GetKeysAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequest req,
             string tenantId)
         {
-            var key = _jwtService.GetPublicKey();
+            var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenantId);
+            if (encryptionProvider == null)
+            {
+                return new NotFoundResult();
+            }
+
+            var key = encryptionProvider.GetPublicKey();
 
             return new OkObjectResult(new KeysResponseModel
             {
@@ -60,7 +65,7 @@ namespace DevOidc.Functions.Functions
                         Kid = key.Id,
                         N = key.Modulus,
                         E = key.Exponent,
-                        Issuer = $"{BaseUrl}{tenantId}"
+                        Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}"
                     }
                 }
             });

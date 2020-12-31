@@ -5,8 +5,14 @@ namespace DevOidc.Services.Abstractions
 {
     public interface ITenantService
     {
+        Task<TenantDto?> GetTenantAsync(string tenantId);
+
         Task<ClientDto?> GetClientAsync(string tenantId, string clientId);
 
+        Task<IEncryptionProvider?> GetEncryptionProviderAsync(string tenantId);
+
         Task<UserDto?> AuthenticateUserAsync(string tenantId, string clientId, string userName, string password);
+
+        Task<UserDto?> GetUserAsync(string tenantId, string clientId, string userId);
     }
 }

@@ -26,7 +26,7 @@ namespace DevOidc.Functions.Validators
             _logger = logger;
         }
 
-        public async Task EnsureValidUserAsync(string tenantId, string clientId, string scope)
+        public async Task<ClaimsPrincipal> GetValidUserAsync(string tenantId, string clientId, string scope)
         {
             var httpContext = _httpContextAccessor.HttpContext;
 
@@ -72,7 +72,7 @@ namespace DevOidc.Functions.Validators
                 var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
                 if (IsClaimValid("aud", scope, claimsPrincipal))
                 {
-                    return;
+                    return claimsPrincipal;
                 }
 
                 throw new UnauthorizedAccessException();

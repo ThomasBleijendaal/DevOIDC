@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace DevOidc.Functions.Models
+namespace DevOidc.Functions.Models.Response
 {
     public class TokenResponseModel
     {

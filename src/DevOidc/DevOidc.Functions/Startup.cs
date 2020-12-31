@@ -2,7 +2,7 @@
 using DevOidc.Functions.Abstractions;
 using DevOidc.Functions.Validators;
 using DevOidc.Services.Abstractions;
-using DevOidc.Services.Jwt;
+using DevOidc.Services.Providers;
 using DevOidc.Services.Session;
 using DevOidc.Services.Tenant;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
@@ -17,10 +17,11 @@ namespace DevOidc.Functions
         {
             builder.Services.AddMemoryCache();
 
-            builder.Services.AddSingleton<ITenantService, TenantService>();
-            builder.Services.AddSingleton<IUserSessionService, InMemoryUserSessionService>();
-            // builder.Services.AddSingleton<IJwtService, HS256JwtService>();
-            builder.Services.AddSingleton<IJwtService, RS256JwtService>();
+            builder.Services.AddSingleton<ITenantService, MockTenantService>();
+            builder.Services.AddSingleton<ISessionService, InMemorySessionService>();
+
+            builder.Services.AddTransient<IJwtProvider, RS256JwtProvider>();
+            builder.Services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<IAuthenticationValidator, AzureAdJwtBearerValidator>();

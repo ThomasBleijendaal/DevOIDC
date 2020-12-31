@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
-using DevOidc.Functions.Models;
+using DevOidc.Core.Extensions;
+using DevOidc.Functions.Models.Request;
+using DevOidc.Functions.Models.Response;
 using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,15 +12,21 @@ namespace DevOidc.Functions.Functions
 {
     public class TokenFunctions
     {
-        private readonly IUserSessionService _userSessionService;
-        private readonly IJwtService _jwtService;
+        private readonly ISessionService _sessionService;
+        private readonly ITenantService _tenantService;
+        private readonly IJwtProvider _jwtProvider;
+        private readonly IClaimsProvider _claimsProvider;
 
         public TokenFunctions(
-            IUserSessionService userSessionService,
-            IJwtService jwtService)
+            ISessionService sessionService,
+            ITenantService tenantService,
+            IJwtProvider jwtProvider,
+            IClaimsProvider claimsProvider)
         {
-            _userSessionService = userSessionService;
-            _jwtService = jwtService;
+            _sessionService = sessionService;
+            _tenantService = tenantService;
+            _jwtProvider = jwtProvider;
+            _claimsProvider = claimsProvider;
         }
 
         [FunctionName(nameof(GetTokenByCode))]
@@ -26,13 +34,12 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequest req,
             string tenantId)
         {
-            var form = await req.ReadFormAsync();
-            var grantType = form["grant_type"].ToString();
+            var requestModel = req.BindModelToForm<OidcTokenRequestModel>();
 
-            var code = grantType switch
+            var code = requestModel.GrantType switch
             {
-                "authorization_code" => form["code"].ToString(),
-                "refresh_token" => form["refresh_token"].ToString(),
+                "authorization_code" => requestModel.Code,
+                "refresh_token" => requestModel.RefreshToken,
                 _ => null
             };
 
@@ -41,14 +48,30 @@ namespace DevOidc.Functions.Functions
                 return new BadRequestResult();
             }
 
-            var claims = await _userSessionService.GetClaimsByCodeAsync(tenantId, code);
-            if (claims == null)
+            var session = await _sessionService.GetSessionAsync(tenantId, code);
+            if (session == null)
             {
-                return new NotFoundResult();
+                return new OkObjectResult(new ErrorResonseModel
+                {
+                    Error = "invalid_grant",
+                    ErrorDescription = "Refresh token is expired. User should reauthenticate."
+                });
             }
 
-            var refreshToken = await _userSessionService.StoreClaimsAsync(tenantId, claims);
-            var accessToken = _jwtService.CreateJwt(claims);
+            var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenantId);
+            if (encryptionProvider == null)
+            {
+                return new OkObjectResult(new ErrorResonseModel
+                {
+                    Error = "invalid_request",
+                    ErrorDescription = "Unknown tenant."
+                });
+            }
+
+            var claims = _claimsProvider.CreateClaims(session.User, session.Client, session.Scope);
+
+            var accessToken = _jwtProvider.CreateJwt(claims, session.Tenant.TokenLifetime, encryptionProvider);
+            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope);
 
             return new OkObjectResult(new TokenResponseModel
             {
@@ -56,7 +79,7 @@ namespace DevOidc.Functions.Functions
                 ExpiresIn = 3599,
                 ExtExpiresIn = 3599,
                 AccessToken = accessToken,
-                RefreshToken = refreshToken,
+                RefreshToken = refreshCode,
                 IdToken = accessToken
             });
         }
