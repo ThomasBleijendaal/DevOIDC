@@ -68,19 +68,22 @@ namespace DevOidc.Functions.Functions
                 });
             }
 
-            var claims = _claimsProvider.CreateClaims(session.User, session.Client, session.Scope);
+            var accessTokenClaims = _claimsProvider.CreateAccessTokenClaims(session.User, session.Client, session.Scope);
+            var idTokenClaims = session.RequestedScopes?.Contains("offline_access") != true ? default : _claimsProvider.CreateIdTokenClaims(session.User, session.Client, session.Scope);
 
-            var accessToken = _jwtProvider.CreateJwt(claims, session.Tenant.TokenLifetime, encryptionProvider);
-            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope);
+            var accessToken = _jwtProvider.CreateJwt(accessTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
+            var idToken = idTokenClaims == null ? null : _jwtProvider.CreateJwt(idTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
+
+            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope, session.RequestedScopes);
 
             return new OkObjectResult(new TokenResponseModel
             {
                 TokenType = "Bearer",
-                ExpiresIn = 3599,
-                ExtExpiresIn = 3599,
+                ExpiresIn = (int)session.Tenant.TokenLifetime.TotalSeconds,
+                ExtExpiresIn = (int)session.Tenant.TokenLifetime.TotalSeconds,
                 AccessToken = accessToken,
                 RefreshToken = refreshCode,
-                IdToken = accessToken
+                IdToken = idToken
             });
         }
     }

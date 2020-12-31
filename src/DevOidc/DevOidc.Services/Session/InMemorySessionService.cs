@@ -21,13 +21,13 @@ namespace DevOidc.Services.Session
             _tenantService = tenantService;
         }
 
-        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope)
-            => await StoreSession("lls", tenantId, user, client, scope);
+        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+            => await StoreSession("lls", tenantId, user, client, scope, requestedScopes);
 
-        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope)
-            => await StoreSession("sls", tenantId, user, client, scope);
+        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+            => await StoreSession("sls", tenantId, user, client, scope, requestedScopes);
 
-        private async Task<string> StoreSession(string type, string tenantId, UserDto user, ClientDto client, ScopeDto scope)
+        private async Task<string> StoreSession(string type, string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant == null)
@@ -45,7 +45,8 @@ namespace DevOidc.Services.Session
                     Client = client,
                     Scope = scope,
                     Tenant = tenant,
-                    User = user
+                    User = user,
+                    RequestedScopes = requestedScopes
                 });
 
             return refreshCode;

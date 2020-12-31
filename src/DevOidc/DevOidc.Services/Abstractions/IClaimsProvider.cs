@@ -5,6 +5,7 @@ namespace DevOidc.Services.Abstractions
 {
     public interface IClaimsProvider
     {
-        Dictionary<string, object> CreateClaims(UserDto user, ClientDto client, ScopeDto scope);
+        Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, ScopeDto scope);
+        Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope);
     }
 }

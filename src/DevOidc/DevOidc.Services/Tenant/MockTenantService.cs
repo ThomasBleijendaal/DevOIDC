@@ -19,6 +19,7 @@ namespace DevOidc.Services.Tenant
                 {
                     UserId = "12345",
                     UserName = "test@test.com",
+                    FullName = "Test Test",
                     ExtraClaims = new Dictionary<string, string>()
                 };
             }
@@ -32,6 +33,7 @@ namespace DevOidc.Services.Tenant
             {
                 UserId = "12345",
                 UserName = "test@test.com",
+                FullName = "Test Test",
                 ExtraClaims = new Dictionary<string, string>()
             });
         }

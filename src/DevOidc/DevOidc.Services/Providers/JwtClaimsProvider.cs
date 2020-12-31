@@ -15,7 +15,7 @@ namespace DevOidc.Services.Providers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public Dictionary<string, object> CreateClaims(UserDto user, ClientDto client, ScopeDto scope)
+        public Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, ScopeDto scope)
         {
             var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
 
@@ -29,6 +29,21 @@ namespace DevOidc.Services.Providers
 
             AddClaims(client.ExtraClaims, dict);
             AddClaims(user.ExtraClaims, dict);
+
+            return dict;
+        }
+
+        public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope)
+        {
+            var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
+
+            var dict = new Dictionary<string, object>
+            {
+                { "sub", user.UserId },
+                { "iss", $"{baseUri}{client.TenantId}/" },
+                { "aud", scope.ScopeId },
+                { "name", user.FullName }
+            };
 
             return dict;
         }

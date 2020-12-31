@@ -144,7 +144,7 @@ button {{ margin: .2rem; }}
                 return RedirectToLogin("invalid_login", "Username or password is incorrect.");
             }
 
-            var code = await _sessionService.CreateSessionAsync(tenantId, user, client, scope);
+            var code = await _sessionService.CreateSessionAsync(tenantId, user, client, scope, requestModel.Scope);
 
             return RedirectToClientApp();
 
