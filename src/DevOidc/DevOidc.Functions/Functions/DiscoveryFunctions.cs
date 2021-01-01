@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
+using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
 using DevOidc.Functions.Models.Response;
-using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;

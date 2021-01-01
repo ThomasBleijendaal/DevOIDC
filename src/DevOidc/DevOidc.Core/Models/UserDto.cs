@@ -4,9 +4,9 @@ namespace DevOidc.Core.Models
 {
     public class UserDto
     {
-        public string UserId { get; set; }
-        public string UserName { get; set; }
-        public string FullName { get; set; }
-        public Dictionary<string, string> ExtraClaims { get; set; }
+        public string UserId { get; set; } = default!;
+        public string UserName { get; set; } = default!;
+        public string FullName { get; set; } = default!;
+        public Dictionary<string, string> ExtraClaims { get; set; } = default!;
     }
 }

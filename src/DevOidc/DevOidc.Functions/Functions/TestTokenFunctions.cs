@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using DevOidc.Core.Extensions;
 using DevOidc.Functions.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,8 +19,8 @@ namespace DevOidc.Functions.Functions
             _authenticationValidator = authenticationValidator;
         }
 
-        [FunctionName(nameof(TestOidcToken))]
-        public async Task<IActionResult> TestOidcToken(
+        [FunctionName(nameof(TestOidcTokenAsync))]
+        public async Task<IActionResult> TestOidcTokenAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequest req,
             string tenantId,
             string clientId,
@@ -27,7 +28,8 @@ namespace DevOidc.Functions.Functions
         {
             try
             {
-                var user = await _authenticationValidator.GetValidUserAsync(tenantId, clientId, scope);
+                var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
+                var user = await _authenticationValidator.GetValidUserAsync(instance, clientId, scope);
 
                 return new OkObjectResult(user.Claims.ToDictionary(x => x.Type, x => x.Value));
             }

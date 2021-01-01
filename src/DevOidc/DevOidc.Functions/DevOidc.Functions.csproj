@@ -14,8 +14,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DevOidc.Business\DevOidc.Business.csproj" />
     <ProjectReference Include="..\DevOidc.Core\DevOidc.Core.csproj" />
-    <ProjectReference Include="..\DevOidc.Services\DevOidc.Services.csproj" />
+    <ProjectReference Include="..\DevOidc.Repositories\DevOidc.Repositories.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">

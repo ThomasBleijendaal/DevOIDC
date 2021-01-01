@@ -6,10 +6,10 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
 using DevOidc.Core.Models;
 using DevOidc.Functions.Models.Request;
-using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -29,8 +29,8 @@ namespace DevOidc.Functions.Functions
             _sessionService = sessionService;
         }
 
-        [FunctionName(nameof(Authorize))]
-        public async Task<HttpResponseMessage> Authorize(
+        [FunctionName(nameof(AuthorizeAsync))]
+        public async Task<HttpResponseMessage> AuthorizeAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequest req,
             string tenantId)
         {
@@ -120,8 +120,8 @@ button {{ margin: .2rem; }}
             };
         }
 
-        [FunctionName(nameof(AuthorizePostback))]
-        public async Task<HttpResponseMessage> AuthorizePostback(
+        [FunctionName(nameof(AuthorizePostbackAsync))]
+        public async Task<HttpResponseMessage> AuthorizePostbackAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequest req,
             string tenantId)
         {

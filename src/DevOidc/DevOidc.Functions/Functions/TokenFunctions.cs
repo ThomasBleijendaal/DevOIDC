@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
+using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
-using DevOidc.Services.Abstractions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
@@ -29,26 +29,25 @@ namespace DevOidc.Functions.Functions
             _claimsProvider = claimsProvider;
         }
 
-        [FunctionName(nameof(GetTokenByCode))]
-        public async Task<IActionResult> GetTokenByCode(
+        [FunctionName(nameof(GetTokenByCodeAsync))]
+        public async Task<IActionResult> GetTokenByCodeAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequest req,
             string tenantId)
         {
             var requestModel = req.BindModelToForm<OidcTokenRequestModel>();
 
-            var code = requestModel.GrantType switch
-            {
-                "authorization_code" => requestModel.Code,
-                "refresh_token" => requestModel.RefreshToken,
-                _ => null
-            };
+            var isRefreshToken = requestModel.GrantType == "refresh_token";
+
+            var code = isRefreshToken ? requestModel.RefreshToken : requestModel.Code;
 
             if (string.IsNullOrWhiteSpace(code))
             {
                 return new BadRequestResult();
             }
 
-            var session = await _sessionService.GetSessionAsync(tenantId, code);
+            var session = isRefreshToken 
+                ? await _sessionService.GetLongLivedSessionAsync(tenantId, code)
+                : await _sessionService.GetSessionAsync(tenantId, code);
             if (session == null)
             {
                 return new OkObjectResult(new ErrorResonseModel
