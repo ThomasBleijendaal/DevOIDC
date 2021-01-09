@@ -1,0 +1,107 @@
+﻿@inherits BasePropertyEditor
+
+@if (Claims != null)
+{
+    <div class="form-control form-control-select-list @(CssHelper.GetValidationClass(State))">
+        @{
+            var index = 0;
+        }
+        @foreach (var claim in Claims)
+        {
+            var thisIndex = index;
+
+            <div class="form-check">
+                <div class="row">
+                    <div class="col">
+                        <input value=@claim.key
+                               disabled=@IsDisabled
+                               placeholder="Key"
+                               @onchange=@((e) => OnChange(thisIndex, true, e.Value as string))
+                               class="form-control" />
+                    </div>
+
+                    <div class="col">
+                        <input value=@claim.value
+                               disabled=@IsDisabled
+                               placeholder="Value"
+                               @onchange=@((e) => OnChange(thisIndex, false, e.Value as string))
+                               class="form-control" />
+                    </div>
+                    <div class="col col-md-1">
+                        <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><i class="icon ion-md-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            index++;
+        }
+
+        <div class="form-check">
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-light" @onclick=AddRow><i class="icon ion-md-add"></i> Add claim</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @foreach (var message in GetValidationMessages())
+    {
+        <div class="invalid-feedback">
+            @message
+        </div>
+    }
+}
+
+@code {
+
+    private List<(string key, string value)>? Claims;
+
+    protected override void OnParametersSet()
+    {
+        var claims = GetValueAsObject() as Dictionary<string, string> ?? new Dictionary<string, string>();
+
+        Claims = claims.ToList(x => (x.Key, x.Value));
+
+        StateHasChanged();
+    }
+
+    private void OnChange(int index, bool isKey, string? value)
+    {
+        if (Claims == null || Claims.Count < index)
+        {
+            return;
+        }
+
+        if (isKey)
+        {
+            Claims[index] = (value ?? "", Claims[index].value);
+        }
+        else
+        {
+            Claims[index] = (Claims[index].key, value ?? "");
+        }
+
+        Update();
+    }
+
+    private void AddRow(MouseEventArgs args)
+    {
+        Claims?.Add(("", ""));
+        StateHasChanged();
+    }
+
+    private void RemoveRow(int index)
+    {
+        Claims?.RemoveAt(index);
+
+        Update();
+
+        StateHasChanged();
+    }
+
+    private void Update()
+    {
+        SetValueFromObject(Claims?.ToDictionary(x => x.key, x => x.value) ?? new Dictionary<string, string>());
+    }
+}

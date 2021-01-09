@@ -2,6 +2,7 @@
 {
     public class ClientEntity : BaseEntity
     {
+        public string? Name { get; set; }
         public string? Scopes { get; set; }
         public string? ExtraClaims { get; set; }
         public string? RedirectUris { get; set; }

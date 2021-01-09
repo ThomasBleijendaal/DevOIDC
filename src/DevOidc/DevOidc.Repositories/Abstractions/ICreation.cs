@@ -4,7 +4,7 @@ namespace DevOidc.Repositories.Abstractions
 {
     public interface ICreation<TEntity>
     {
-        string OwnerId { get; }
+        string PartitionKey { get; }
 
         Action<TEntity> Mutation { get; }
 

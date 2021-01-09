@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models;
 using DevOidc.Repositories.Abstractions;
-using DevOidc.Repositories.Commands;
+using DevOidc.Repositories.Commands.Session;
 using DevOidc.Repositories.Entities;
 using DevOidc.Repositories.Exceptions;
-using DevOidc.Repositories.Specifications;
+using DevOidc.Repositories.Specifications.Session;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 

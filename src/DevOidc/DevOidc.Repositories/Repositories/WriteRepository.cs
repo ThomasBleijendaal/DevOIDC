@@ -26,7 +26,7 @@ namespace DevOidc.Repositories.Repositories
             var entity = new TEntity
             {
                 RowKey = newId.ToString(),
-                PartitionKey = creation.OwnerId.ToString()
+                PartitionKey = creation.PartitionKey.ToString()
             };
 
             creation.Mutation.Invoke(entity);

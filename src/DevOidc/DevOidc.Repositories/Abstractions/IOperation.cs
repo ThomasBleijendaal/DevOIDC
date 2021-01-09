@@ -6,6 +6,5 @@ namespace DevOidc.Repositories.Abstractions
     public interface IOperation<TEntity> : ISelection<TEntity>
     {
         Action<TEntity> Mutation { get; }
-        Func<TEntity, bool> Validation { get; }
     }
 }

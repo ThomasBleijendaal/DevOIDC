@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GeneratedMapper" Version="1.4.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.1" PrivateAssets="all" />
+    <PackageReference Include="RapidCMS.UI" Version="3.2.1" />
+    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DevOidc.Business\DevOidc.Business.csproj" />
+    <ProjectReference Include="..\DevOidc.Core\DevOidc.Core.csproj" />
+    <ProjectReference Include="..\DevOidc.Repositories\DevOidc.Repositories.csproj" />
+  </ItemGroup>
+
+</Project>

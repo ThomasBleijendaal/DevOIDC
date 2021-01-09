@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
+using DevOidc.Core.Models;
 
 namespace DevOidc.Business.Abstractions
 {
     public interface ITenantManagementService
     {
-        Task CreateTenantAsync(string ownerId);
+        Task DeleteTenantAsync(string tenantId);
+        Task<string> CreateTenantAsync(string ownerName, TenantDto tenant);
     }
 }

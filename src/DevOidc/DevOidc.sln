@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Core", "DevOidc.Cor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Business", "DevOidc.Business\DevOidc.Business.csproj", "{A90B6EA8-9423-4DF2-AD21-3D5FE84BF169}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOidc.Repositories", "DevOidc.Repositories\DevOidc.Repositories.csproj", "{71F080CC-5A0D-4D33-B7A9-DFC16C5B00A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Repositories", "DevOidc.Repositories\DevOidc.Repositories.csproj", "{71F080CC-5A0D-4D33-B7A9-DFC16C5B00A0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Cms", "DevOidc.Cms\DevOidc.Cms.csproj", "{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{71F080CC-5A0D-4D33-B7A9-DFC16C5B00A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71F080CC-5A0D-4D33-B7A9-DFC16C5B00A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71F080CC-5A0D-4D33-B7A9-DFC16C5B00A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

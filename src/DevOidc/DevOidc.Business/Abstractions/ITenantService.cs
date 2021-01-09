@@ -1,10 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using DevOidc.Core.Models;
 
 namespace DevOidc.Business.Abstractions
 {
     public interface ITenantService
     {
+        Task<IReadOnlyList<TenantDto>> GetTenantsAsync();
+
         Task<TenantDto?> GetTenantAsync(string tenantId);
 
         Task<ClientDto?> GetClientAsync(string tenantId, string clientId);
