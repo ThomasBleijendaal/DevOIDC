@@ -6,7 +6,9 @@ namespace DevOidc.Core.Models
     {
         public string UserId { get; set; } = default!;
         public string UserName { get; set; } = default!;
+        public string Password { get; set; } = default!;
         public string FullName { get; set; } = default!;
+        public List<string> Clients { get; set; } = default!;
         public Dictionary<string, string> ExtraClaims { get; set; } = default!;
     }
 }

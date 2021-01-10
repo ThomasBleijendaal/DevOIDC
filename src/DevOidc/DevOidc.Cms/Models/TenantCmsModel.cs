@@ -13,6 +13,6 @@ namespace DevOidc.Cms.Models
         public string? Name { get; set; }
         public string? OwnerName { get; set; }
         public string? Description { get; set; }
-        public TimeSpan TokenLifetime { get; set; }
+        public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromMinutes(5);
     }
 }

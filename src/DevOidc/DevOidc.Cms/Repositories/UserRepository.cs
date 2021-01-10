@@ -67,8 +67,12 @@ namespace DevOidc.Cms.Repositories
                 throw new InvalidOperationException();
             }
 
+            var user = editContext.Entity.MapToUserDto();
+
+            SetClientsFromRelationContainer(editContext, user);
+
             var response = await _httpClient.PostAsync($"user/{tenant.Id}",
-                new StringContent(JsonConvert.SerializeObject(editContext.Entity.MapToUserDto()), Encoding.UTF8, "application/json"));
+                new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json"));
 
             response.EnsureSuccessStatusCode();
 
@@ -89,8 +93,21 @@ namespace DevOidc.Cms.Repositories
                 throw new InvalidOperationException();
             }
 
-            await _httpClient.PutAsync($"user/{tenant.Id}/{editContext.Entity.Id}", 
-                new StringContent(JsonConvert.SerializeObject(editContext.Entity.MapToUserDto()), Encoding.UTF8, "application/json"));
+            var user = editContext.Entity.MapToUserDto();
+            if (editContext.Entity.ResetPassword)
+            {
+                user.Password = "reset";
+            }
+
+            SetClientsFromRelationContainer(editContext, user);
+
+            await _httpClient.PutAsync($"user/{tenant.Id}/{editContext.Entity.Id}",
+                new StringContent(JsonConvert.SerializeObject(user), Encoding.UTF8, "application/json"));
+        }
+
+        private static void SetClientsFromRelationContainer(IEditContext<UserCmsModel> editContext, UserDto user)
+        {
+            user.Clients = editContext.GetRelationContainer().GetRelatedElementIdsFor<ClientCmsModel, string>()?.ToList() ?? user.Clients;
         }
     }
 }

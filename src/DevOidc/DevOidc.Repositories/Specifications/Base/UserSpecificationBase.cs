@@ -13,7 +13,9 @@ namespace DevOidc.Repositories.Specifications.Base
             ExtraClaims = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.ExtraClaims ?? "") ?? new Dictionary<string, string>(),
             FullName = user.FullName ?? "",
             UserId = user.RowKey,
-            UserName = user.UserName ?? ""
+            UserName = user.UserName ?? "",
+            Password = user.Password ?? "",
+            Clients = JsonConvert.DeserializeObject<List<string>>(user.Clients ?? "") ?? new List<string>()
         };
     }
 }

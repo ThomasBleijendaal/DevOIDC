@@ -48,8 +48,6 @@
 </EditForm>
 
 <p>&nbsp;</p>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
 
 @if (WizardForm.Type != null)
 {
@@ -64,8 +62,14 @@
             <code>https://your-url/authentication/login-callback</code>.
         </p>
 
-        <input class="form-control" @bind-value=WebRedirectUrl placeholder="Redirect URL" />
+        <input class="form-control" @bind=WebRedirectUrl @bind:event="oninput" placeholder="Redirect URL" />
 
+        <p>&nbsp;</p>
+
+        <p><strong>Redirect URI</strong></p>
+        <pre>@WebRedirectUrl</pre>
+
+        <p>&nbsp;</p>
     }
     else if (WizardForm.Type == Ios)
     {
@@ -76,8 +80,14 @@
             in the <code>Info.plist</code> or <code>Build Settings</code>.
         </p>
 
-        <input class="form-control" @bind-value=IosBundleId placeholder="Bundle ID" />
+        <input class="form-control" @bind=IosBundleId @bind:event="oninput" placeholder="Bundle ID" />
 
+        <p>&nbsp;</p>
+
+        <p><strong>Redirect URI</strong></p>
+        <pre>msauth.@IosBundleId://auth</pre>
+
+        <p>&nbsp;</p>
     }
     else if (WizardForm.Type == Android)
     {
@@ -92,15 +102,18 @@
         </p>
 
 
-        <input class="form-control" @bind-value=AndroidPackageName placeholder="Package name" />
-        <input class="form-control" @bind-value=AndroidSignatureHash placeholder="Signature hash" />
+        <input class="form-control" @bind=AndroidPackageName @bind:event="oninput" placeholder="Package name" />
+        <input class="form-control" @bind=AndroidSignatureHash @bind:event="oninput" placeholder="Signature hash" />
+
+        <p>&nbsp;</p>
+
+        <p><strong>Redirect URI</strong></p>
+        <pre>msauth://@AndroidPackageName/@AndroidSignatureHash</pre>
+
+        <p>&nbsp;</p>
     }
 
-    <p>&nbsp;</p>
-    <p>&nbsp;</p>
-    <p>&nbsp;</p>
-
-    <button class="btn btn-primary" @onclick=Add><i class="icon ion-md-add"></i> Add Redirect URL</button>
+    <button class="btn btn-primary" @onclick=Add><i class="icon ion-md-add"></i> Add Redirect URI</button>
     <button class="btn btn-light" @onclick=Cancel><i class="icon ion-md-return-left"></i> Cancel</button>
 }
 
@@ -109,9 +122,9 @@
 
     private Form WizardForm { get; set; } = new Form();
 
-    private string Web { get; set; } = "Web";
-    private string Ios { get; set; } = "iOS";
-    private string Android { get; set; } = "Android";
+    private string Web { get; } = "Web";
+    private string Ios { get; } = "iOS";
+    private string Android { get; } = "Android";
 
     private string? WebRedirectUrl { get; set; }
     private string? IosBundleId { get; set; }
@@ -122,8 +135,18 @@
     {
         if (EditContext.Entity is ClientCmsModel client)
         {
-            // TODO
-            client.RedirectUris.Add(WebRedirectUrl);
+            if (WizardForm.Type == Web)
+            {
+                client.RedirectUris.Add(WebRedirectUrl ?? "");
+            }
+            else if (WizardForm.Type == Ios)
+            {
+                client.RedirectUris.Add($"msauth.{IosBundleId}://auth");
+            }
+            else if (WizardForm.Type == Android)
+            {
+                client.RedirectUris.Add($"msauth://{AndroidPackageName}/{AndroidSignatureHash}");
+            }
         }
 
         ButtonClicked(RapidCMS.Core.Enums.CrudType.None);

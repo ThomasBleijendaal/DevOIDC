@@ -18,6 +18,7 @@ namespace DevOidc.Repositories.Operations.User
 
         public Action<UserEntity> Mutation => user =>
         {
+            user.Clients = JsonConvert.SerializeObject(_command.User.Clients);
             user.ExtraClaims = JsonConvert.SerializeObject(_command.User.ExtraClaims);
             user.FullName = _command.User.FullName;
             user.UserName = _command.User.UserName;

@@ -1,0 +1,91 @@
+﻿@inherits BasePropertyEditor
+
+@if (Scopes != null)
+{
+    <div class="form-control form-control-select-list @(CssHelper.GetValidationClass(State))">
+        @{
+            var index = 0;
+        }
+        @foreach (var scope in Scopes)
+        {
+            var thisIndex = index;
+
+            <div class="form-check">
+                <div class="row">
+                    <div class="col">
+                        <input @bind-value=@scope.ScopeId
+                               disabled=@IsDisabled
+                               placeholder="Scope ID"
+                               @onkeypress=@OnChange
+                               class="form-control" />
+                    </div>
+
+                    <div class="col">
+                        <input @bind-value=@scope.Description
+                               disabled=@IsDisabled
+                               placeholder="Scope description"
+                               @onkeypress=@OnChange
+                               class="form-control" />
+                    </div>
+                    <div class="col col-md-1">
+                        <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><i class="icon ion-md-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            index++;
+        }
+
+        <div class="form-check">
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-light" @onclick=AddRow><i class="icon ion-md-add"></i> Add scope</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @foreach (var message in GetValidationMessages())
+    {
+        <div class="invalid-feedback">
+            @message
+        </div>
+    }
+}
+
+@code {
+
+    private List<ScopeDto>? Scopes;
+
+    protected override void OnParametersSet()
+    {
+        Scopes = GetValueAsObject() as List<ScopeDto> ?? new List<ScopeDto>();
+
+        StateHasChanged();
+    }
+
+    private void OnChange(KeyboardEventArgs args)
+    {
+        Update();
+    }
+
+    private void AddRow(MouseEventArgs args)
+    {
+        Scopes?.Add(new ScopeDto { Description = "", ScopeId = "" });
+        StateHasChanged();
+    }
+
+    private void RemoveRow(int index)
+    {
+        Scopes?.RemoveAt(index);
+
+        Update();
+
+        StateHasChanged();
+    }
+
+    private void Update()
+    {
+        SetValueFromObject(Scopes?.ToList() ?? new List<ScopeDto>());
+    }
+}

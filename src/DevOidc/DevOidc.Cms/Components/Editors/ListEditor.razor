@@ -19,22 +19,29 @@
                                @onchange=@((e) => OnChange(thisIndex, e.Value as string))
                                class="form-control" />
                     </div>
-                    <div class="col col-md-1">
-                        <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><i class="icon ion-md-trash"></i></button>
-                    </div>
+                    @if (!IsDisabled)
+                    {
+                        <div class="col col-md-1">
+                            <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><i class="icon ion-md-trash"></i></button>
+                        </div>
+                    }
                 </div>
             </div>
 
             index++;
         }
 
-        <div class="form-check">
-            <div class="row">
-                <div class="col">
-                    <button class="btn btn-light" @onclick=AddRow><i class="icon ion-md-add"></i> Add entry</button>
+
+        @if (!IsDisabled)
+        {
+            <div class="form-check">
+                <div class="row">
+                    <div class="col">
+                        <button class="btn btn-light" @onclick=AddRow><i class="icon ion-md-add"></i> Add entry</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 
     @foreach (var message in GetValidationMessages())

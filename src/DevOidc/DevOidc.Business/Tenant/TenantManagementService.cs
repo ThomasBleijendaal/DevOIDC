@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -6,6 +7,8 @@ using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Commands.Tenant;
+using DevOidc.Repositories.Entities;
+using DevOidc.Repositories.Specifications.Tenant;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
@@ -14,13 +17,16 @@ namespace DevOidc.Business.Tenant
 {
     public class TenantManagementService : ITenantManagementService
     {
+        private readonly IReadRepository<TenantEntity> _readRepository;
         private readonly ICommandHandler<CreateTenantCommand> _createTenantCommandHandler;
         private readonly ICommandHandler<DeleteTenantCommand> _deleteTenantCommandHandler;
 
         public TenantManagementService(
+            IReadRepository<TenantEntity> readRepository,
             ICommandHandler<CreateTenantCommand> createTenantCommandHandler,
             ICommandHandler<DeleteTenantCommand> deleteTenantCommandHandler)
         {
+            _readRepository = readRepository;
             _createTenantCommandHandler = createTenantCommandHandler;
             _deleteTenantCommandHandler = deleteTenantCommandHandler;
         }
@@ -34,6 +40,9 @@ namespace DevOidc.Business.Tenant
 
             return command.TenantId ?? throw new InvalidOperationException();
         }
+
+        public async Task<IReadOnlyList<TenantDto>> GetTenantsAsync()
+            => await _readRepository.GetListAsync(new GetAllTenantsSpecification());
 
         public async Task DeleteTenantAsync(string tenantId)
         {

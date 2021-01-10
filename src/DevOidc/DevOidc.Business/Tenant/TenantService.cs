@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Business.Providers;
 using DevOidc.Core.Models;
@@ -28,22 +27,23 @@ namespace DevOidc.Business.Tenant
         }
 
         public async Task<UserDto?> AuthenticateUserAsync(string tenantId, string clientId, string userName, string password)
-            => await _userRepository.GetAsync(new GetUserByPasswordSpecification(tenantId, clientId, userName, password));
+        {
+            var user = await _userRepository.GetAsync(new GetUserByPasswordSpecification(tenantId, userName, password));
+
+            return CheckIfUserHasAccessToClient(clientId, user);
+        }
 
         public async Task<UserDto?> GetUserAsync(string tenantId, string clientId, string userId)
-        { 
+        {
             var user = await _userRepository.GetAsync(new GetUserByIdSpecification(tenantId, userId));
 
-            // TODO: check client
-
-            return user;
+            return CheckIfUserHasAccessToClient(clientId, user);
         }
+
+        
 
         public async Task<TenantDto?> GetTenantAsync(string tenantId)
             => await _tenantRepository.GetAsync(new GetTenantSpecification(tenantId));
-
-        public async Task<IReadOnlyList<TenantDto>> GetTenantsAsync()
-            => await _tenantRepository.GetListAsync(new GetAllTenantsSpecification());
 
         public async Task<ClientDto?> GetClientAsync(string tenantId, string clientId)
             => await _clientRepository.GetAsync(new GetClientByIdSpecification(tenantId, clientId));
@@ -56,6 +56,16 @@ namespace DevOidc.Business.Tenant
                 key?.PublicKey is string publicKey)
             {
                 return new RS256EncryptionProvider(publicKey, privateKey);
+            }
+
+            return default;
+        }
+
+        private static UserDto? CheckIfUserHasAccessToClient(string clientId, UserDto? user)
+        {
+            if (user?.Clients.Contains(clientId) == true)
+            {
+                return user;
             }
 
             return default;

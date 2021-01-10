@@ -38,8 +38,6 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "cms/tenant/{tenantId}")] HttpRequest req,
             string tenantId)
         {
-            // TODO: check owner
-            
             await _tenantManagementService.DeleteTenantAsync(tenantId);
 
             return new OkObjectResult(tenantId);
@@ -59,7 +57,7 @@ namespace DevOidc.Functions.Functions
         public async Task<IActionResult> GetTenantsAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cms/tenant")] HttpRequest req)
         {
-            var tenants = await _tenantService.GetTenantsAsync();
+            var tenants = await _tenantManagementService.GetTenantsAsync();
 
             return new OkObjectResult(tenants);
         }

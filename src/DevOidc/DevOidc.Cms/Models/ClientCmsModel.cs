@@ -19,12 +19,10 @@ namespace DevOidc.Cms.Models
         [Required]
         public string Name { get; set; } = "";
 
-        //[Display(ShortName = "Redirect URIs", Name = "Redirect URIs", ResourceType = typeof(ClaimEditor), Order = 0)]
-        //[Required]
+        [Required]
         public List<string> RedirectUris { get; set; } = new List<string>();
 
-        //[Display(ShortName = "Supported scopes", Name = "Supported scopes", ResourceType = typeof(ClaimEditor), Order = 0)]
-        //[Required]
+        [Required]
         public List<ScopeDto> Scopes { get; set; } = new List<ScopeDto>();
 
         [Display(ShortName = "Extra claims", Name = "Extra claims", ResourceType = typeof(ClaimEditor), Order = 0)]

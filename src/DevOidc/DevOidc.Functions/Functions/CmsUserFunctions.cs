@@ -63,7 +63,7 @@ namespace DevOidc.Functions.Functions
             string userId)
         {
             var body = JsonConvert.DeserializeObject<UserDto>(await req.ReadAsStringAsync());
-            await _userManagementService.UpdateUserAsync(tenantId, userId, body);
+            await _userManagementService.UpdateUserAsync(tenantId, userId, body, body.Password == "reset");
 
             return new OkResult();
         }

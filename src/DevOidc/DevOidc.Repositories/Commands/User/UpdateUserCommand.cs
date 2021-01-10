@@ -5,11 +5,12 @@ namespace DevOidc.Repositories.Commands.User
 {
     public class UpdateUserCommand : ICommand
     {
-        public UpdateUserCommand(string tenantId, string userId, UserDto user)
+        public UpdateUserCommand(string tenantId, string userId, UserDto user, bool updatePassword = false)
         {
             TenantId = tenantId;
             UserId = userId;
             User = user;
+            UpdatePassword = updatePassword;
         }
 
         public string TenantId { get; }

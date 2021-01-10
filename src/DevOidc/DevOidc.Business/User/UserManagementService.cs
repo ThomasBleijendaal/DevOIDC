@@ -47,7 +47,7 @@ namespace DevOidc.Business.Tenant
         public async Task<UserDto?> GetUserByIdAsync(string tenantId, string userId)
             => await _readRepository.GetAsync(new GetUserByIdSpecification(tenantId, userId));
 
-        public async Task UpdateUserAsync(string tenantId, string userId, UserDto user)
-            => await _updateUserCommandHandler.HandleAsync(new UpdateUserCommand(tenantId, userId, user));
+        public async Task UpdateUserAsync(string tenantId, string userId, UserDto user, bool resetPassword = false)
+            => await _updateUserCommandHandler.HandleAsync(new UpdateUserCommand(tenantId, userId, user, resetPassword));
     }
 }
