@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿
+using System.Threading.Tasks;
 using DevOidc.Cms.Models;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using RapidCMS.Core.Abstractions.Handlers;
@@ -7,7 +8,7 @@ using RapidCMS.Core.Authorization;
 using RapidCMS.Core.Enums;
 using RapidCMS.Core.Forms;
 
-namespace DevOidc.Cms.ButtonHandlers
+namespace DevOidc.Cms.Handlers
 {
     public class ResetPasswordButtonHandler : IButtonActionHandler
     {

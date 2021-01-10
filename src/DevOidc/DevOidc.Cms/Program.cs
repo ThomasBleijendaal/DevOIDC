@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DevOidc.Cms.ButtonHandlers;
 using DevOidc.Cms.Components.Editors;
+using DevOidc.Cms.Components.Login;
 using DevOidc.Cms.Components.Panes;
+using DevOidc.Cms.Handlers;
 using DevOidc.Cms.Models;
 using DevOidc.Cms.Repositories;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RapidCMS.Core.Enums;
 using RapidCMS.UI.Components.Buttons;
@@ -20,9 +24,26 @@ namespace DevOidc.Cms
             builder.RootComponents.Add<App>("#app");
 
             builder.Services.AddAuthorizationCore();
-            builder.Services.AddHttpClient("cms", (httpClient) =>
+
+            builder.Services
+                .AddHttpClient("cms", (httpClient) =>
+                {
+                    httpClient.BaseAddress = new Uri(builder.Configuration["Uris:Api"]);
+                }).AddHttpMessageHandler(sp =>
+                {
+                    var provider = sp.GetRequiredService<IAccessTokenProvider>();
+                    var manager = sp.GetRequiredService<NavigationManager>();
+
+                    // this forwards the bearer token to the api
+                    return new TokenAuthorizationMessageHandler(provider, manager, builder.Configuration["Uris:Api"]);
+                });
+
+            builder.Services.AddMsalAuthentication(options =>
             {
-                httpClient.BaseAddress = new Uri("http://localhost:7071/cms/");
+                builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
+
+                options.ProviderOptions.DefaultAccessTokenScopes.Add(builder.Configuration["AzureAD:Scope"]);
+                options.ProviderOptions.LoginMode = "redirect";
             });
 
             builder.Services.AddTransient<ClientRepository>();
@@ -33,9 +54,10 @@ namespace DevOidc.Cms
 
             builder.Services.AddRapidCMSWebAssembly(config =>
             {
-                config.SetSiteName("DevOIDC");
+                config.SetSiteName("DevOIDC CMS");
 
-                config.AllowAnonymousUser();
+                config.SetCustomLoginStatus(typeof(LoginStatus));
+                config.SetCustomLoginScreen(typeof(LoginScreen));
 
                 config.Dashboard.AddSection("tenant");
 
@@ -52,7 +74,7 @@ namespace DevOidc.Cms
                         x.AddRow(row =>
                         {
                             row.AddField(x => x.Id).SetType(DisplayType.Pre);
-                            row.AddField(x => x.OwnerName);
+                            row.AddField(x => x.OwnerName).SetName("Owner");
                             row.AddField(x => x.Name);
                             row.AddField(x => x.Description);
 
@@ -69,6 +91,7 @@ namespace DevOidc.Cms
                         x.AddSection(section =>
                         {
                             section.AddField(x => x.Id).SetType(DisplayType.Pre);
+                            section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.TokenLifetime.TotalSeconds).SetName("Token lifetime").SetDescription("In seconds").SetType(DisplayType.Label);

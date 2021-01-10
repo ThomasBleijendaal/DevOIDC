@@ -10,6 +10,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
+    // TODO: test CORS for SPA / Web
     public class TokenFunctions
     {
         private readonly ISessionService _sessionService;

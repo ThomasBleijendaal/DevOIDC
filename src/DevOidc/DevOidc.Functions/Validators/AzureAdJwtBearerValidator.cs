@@ -26,7 +26,7 @@ namespace DevOidc.Functions.Validators
             _logger = logger;
         }
 
-        public async Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope)
+        public async Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope, Uri? validIssuer = default)
         {
             var httpContext = _httpContextAccessor.HttpContext;
 
@@ -34,7 +34,7 @@ namespace DevOidc.Functions.Validators
 
             var documentRetriever = new HttpDocumentRetriever()
             {
-                RequireHttps = false
+                RequireHttps = instanceUri.Scheme == "https"
             };
 
             var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
@@ -66,7 +66,7 @@ namespace DevOidc.Functions.Validators
                     ValidateIssuer = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKeys = oidcWellknownEndpoints.SigningKeys,
-                    ValidIssuer = $"{instanceUri}/"
+                    ValidIssuer = $"{validIssuer ?? instanceUri}/"
                 };
 
                 var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);

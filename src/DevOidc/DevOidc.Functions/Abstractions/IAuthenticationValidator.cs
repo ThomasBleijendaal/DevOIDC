@@ -6,6 +6,6 @@ namespace DevOidc.Functions.Abstractions
 {
     public interface IAuthenticationValidator
     {
-        Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope);
+        Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope, Uri? validIssuer = default);
     }
 }

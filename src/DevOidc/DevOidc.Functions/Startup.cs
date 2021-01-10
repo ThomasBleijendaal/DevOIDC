@@ -6,6 +6,7 @@ using DevOidc.Business.Session;
 using DevOidc.Business.Tenant;
 using DevOidc.Functions;
 using DevOidc.Functions.Abstractions;
+using DevOidc.Functions.Models;
 using DevOidc.Functions.Validators;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Commands.Client;
@@ -27,15 +28,17 @@ namespace DevOidc.Functions
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            var config = builder.GetContext().Configuration;
+
             builder.Services.AddMemoryCache();
 
             builder.Services.AddTransient<IJwtProvider, RS256JwtProvider>();
             builder.Services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
 
-            var tableCredentials = new TableSharedKeyCredential("devstoreaccount1", "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==");
+            var tableCredentials = new TableSharedKeyCredential(config["Table:AccountName"], config["Table:AccountKey"]);
 
             builder.Services.AddSingleton(tableCredentials);
-            builder.Services.AddSingleton(new TableServiceClient(new Uri("http://127.0.0.1:10002/devstoreaccount1"), tableCredentials));
+            builder.Services.AddSingleton(new TableServiceClient(new Uri(config["Table:Uri"]), tableCredentials));
 
             builder.Services.AddTransient(typeof(IWriteRepository<>), typeof(WriteRepository<>));
             builder.Services.AddTransient(typeof(IReadRepository<>), typeof(ReadRepository<>));
@@ -62,6 +65,7 @@ namespace DevOidc.Functions
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<IAuthenticationValidator, AzureAdJwtBearerValidator>();
+            builder.Services.AddOptions<AzureAdConfig>().Bind(config.GetSection("AzureAd"));
         }
     }
 }
