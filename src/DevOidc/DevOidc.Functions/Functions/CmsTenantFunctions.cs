@@ -47,8 +47,8 @@ namespace DevOidc.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "cms/tenant/{tenantId}")] HttpRequest req,
             string tenantId)
         {
-            await GetValidUserAsync();
-            await _tenantManagementService.DeleteTenantAsync(tenantId);
+            var user = await GetValidUserAsync();
+            await _tenantManagementService.DeleteTenantAsync(user.Identity?.Name ?? "-unknown-", tenantId);
 
             return new OkObjectResult(tenantId);
         }
@@ -68,8 +68,8 @@ namespace DevOidc.Functions.Functions
         public async Task<IActionResult> GetTenantsAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cms/tenant")] HttpRequest req)
         {
-            await GetValidUserAsync();
-            var tenants = await _tenantManagementService.GetTenantsAsync();
+            var user = await GetValidUserAsync();
+            var tenants = await _tenantManagementService.GetTenantsAsync(user.Identity?.Name ?? "-unknown-");
 
             return new OkObjectResult(tenants);
         }

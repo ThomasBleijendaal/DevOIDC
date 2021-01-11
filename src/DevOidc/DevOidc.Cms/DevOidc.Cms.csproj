@@ -11,14 +11,13 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.1" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="5.0.1" />
-    <PackageReference Include="RapidCMS.UI" Version="3.2.1" />
+    <PackageReference Include="RapidCMS.UI" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="5.0.0" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DevOidc.Business\DevOidc.Business.csproj" />
     <ProjectReference Include="..\DevOidc.Core\DevOidc.Core.csproj" />
-    <ProjectReference Include="..\DevOidc.Repositories\DevOidc.Repositories.csproj" />
   </ItemGroup>
 
 </Project>

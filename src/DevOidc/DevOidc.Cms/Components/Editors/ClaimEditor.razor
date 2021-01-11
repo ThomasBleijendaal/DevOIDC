@@ -2,7 +2,7 @@
 
 @if (Claims != null)
 {
-    <div class="form-control form-control-select-list @(CssHelper.GetValidationClass(State))">
+    <div class="form-control form-control-select-list @(CssHelper.GetDisplayModifier(DisplayType)) @(CssHelper.GetValidationClass(State))">
         @{
             var index = 0;
         }

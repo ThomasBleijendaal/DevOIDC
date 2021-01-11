@@ -41,12 +41,12 @@ namespace DevOidc.Business.Tenant
             return command.TenantId ?? throw new InvalidOperationException();
         }
 
-        public async Task<IReadOnlyList<TenantDto>> GetTenantsAsync()
-            => await _readRepository.GetListAsync(new GetAllTenantsSpecification());
+        public async Task<IReadOnlyList<TenantDto>> GetTenantsAsync(string ownerName)
+            => await _readRepository.GetListAsync(new GetAllTenantsSpecification(ownerName));
 
-        public async Task DeleteTenantAsync(string tenantId)
+        public async Task DeleteTenantAsync(string ownerName, string tenantId)
         {
-            await _deleteTenantCommandHandler.HandleAsync(new DeleteTenantCommand(tenantId));
+            await _deleteTenantCommandHandler.HandleAsync(new DeleteTenantCommand(ownerName, tenantId));
         }
 
         private static string GetStringFromKey(AsymmetricKeyParameter param)

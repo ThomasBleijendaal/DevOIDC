@@ -9,6 +9,13 @@ namespace DevOidc.Repositories.Specifications.Tenant
 {
     public class GetAllTenantsSpecification : TenantSpecificationBase, ISpecification<TenantEntity, TenantDto>
     {
-        public Expression<Func<TenantEntity, bool>> Criteria => tenant => true;
+        private readonly string _ownerName;
+
+        public GetAllTenantsSpecification(string ownerName)
+        {
+            _ownerName = ownerName;
+        }
+
+        public Expression<Func<TenantEntity, bool>> Criteria => tenant => tenant.PartitionKey == _ownerName;
     }
 }

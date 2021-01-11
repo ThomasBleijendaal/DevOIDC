@@ -1,121 +1,125 @@
 ﻿@inherits BaseSidePane
 
-<p>Select the platform you want to add.</p>
+<div class="sidepane-section">
+    <p>Select the platform you want to add.</p>
+</div>
 
-<p>&nbsp;</p>
+<div class="sidepane-section">
+    <EditForm Model=WizardForm>
+        <InputRadioGroup @bind-Value=WizardForm.Type>
+            <div class="form-control form-control-select-list">
+                <div class="form-check">
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-check-label row">
+                                <InputRadio class="form-check-input"
+                                            Value="Web" />
 
-<EditForm Model=WizardForm>
-    <InputRadioGroup @bind-Value=WizardForm.Type>
-        <div class="form-control form-control-select-list">
-            <div class="form-check">
-                <div class="row">
-                    <div class="col">
-                        <label class="form-check-label row">
-                            <InputRadio class="form-check-input"
-                                        Value="Web" />
+                                Web
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-check">
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-check-label row">
+                                <InputRadio class="form-check-input"
+                                            Value="Ios" />
 
-                            Web
-                        </label>
+                                iOS
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-check">
+                    <div class="row">
+                        <div class="col">
+                            <label class="form-check-label row">
+                                <InputRadio class="form-check-input"
+                                            Value="Android" />
+
+                                Android
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="form-check">
-                <div class="row">
-                    <div class="col">
-                        <label class="form-check-label row">
-                            <InputRadio class="form-check-input"
-                                        Value="Ios" />
+        </InputRadioGroup>
+    </EditForm>
+</div>
 
-                            iOS
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="form-check">
-                <div class="row">
-                    <div class="col">
-                        <label class="form-check-label row">
-                            <InputRadio class="form-check-input"
-                                        Value="Android" />
+<div class="sidepane-section">
+    @if (WizardForm.Type != null)
+    {
+        @if (WizardForm.Type == Web)
+        {
+            <p><strong>Web</strong></p>
 
-                            Android
-                        </label>
-                    </div>
-                </div>
-            </div>
+            <p>
+                Enter the URL to which the sign in page should redirect the user
+                to process the authentication code and fetch the token. Usually
+                it is <code>https://your-url/signin-oidc</code> or
+                <code>https://your-url/authentication/login-callback</code>.
+            </p>
+
+            <input class="form-control" @bind=WebRedirectUrl @bind:event="oninput" placeholder="Redirect URL" />
+
+            <p>&nbsp;</p>
+
+            <p><strong>Redirect URI</strong></p>
+            <pre>@(Uri.TryCreate(WebRedirectUrl, UriKind.Absolute, out var uri) ? uri.ToString() : " ")</pre>
+        }
+        else if (WizardForm.Type == Ios)
+        {
+            <p><strong>iOS</strong></p>
+
+            <p>
+                Enter the Bundle ID of your app, which can be found in XCode
+                in the <code>Info.plist</code> or <code>Build Settings</code>.
+            </p>
+
+            <input class="form-control" @bind=IosBundleId @bind:event="oninput" placeholder="Bundle ID" />
+
+            <p>&nbsp;</p>
+
+            <p><strong>Redirect URI</strong></p>
+            <pre>msauth.@IosBundleId://auth</pre>
+        }
+        else if (WizardForm.Type == Android)
+        {
+            <p><strong>Android</strong></p>
+
+            <p>
+                Enter the Package Name and Signature Hash of your app. The
+                Package Name can be found in your Android Manifest and the
+                Signature Hash can be generated via command line.
+                <a href="https://developer.android.com/studio/publish/app-signing"
+                   target="_blank">More info about signing your Android app.</a>
+            </p>
+
+
+            <input class="form-control" @bind=AndroidPackageName @bind:event="oninput" placeholder="Package name" />
+            <input class="form-control" @bind=AndroidSignatureHash @bind:event="oninput" placeholder="Signature hash" />
+
+            <p>&nbsp;</p>
+
+            <p><strong>Redirect URI</strong></p>
+            <pre>msauth://@AndroidPackageName/@AndroidSignatureHash</pre>
+        }
+
+        <div class="buttonbar">
+            <button class="btn btn-primary" @onclick=Add><i class="icon ion-md-add"></i> Add Redirect URI</button>
+            <button class="btn btn-light" @onclick=Cancel><i class="icon ion-md-return-left"></i> Cancel</button>
         </div>
-    </InputRadioGroup>
-</EditForm>
-
-<p>&nbsp;</p>
-
-@if (WizardForm.Type != null)
-{
-    @if (WizardForm.Type == Web)
-    {
-        <p><strong>Web</strong></p>
-
-        <p>
-            Enter the URL to which the sign in page should redirect the user
-            to process the authentication code and fetch the token. Usually
-            it is <code>https://your-url/signin-oidc</code> or
-            <code>https://your-url/authentication/login-callback</code>.
-        </p>
-
-        <input class="form-control" @bind=WebRedirectUrl @bind:event="oninput" placeholder="Redirect URL" />
-
-        <p>&nbsp;</p>
-
-        <p><strong>Redirect URI</strong></p>
-        <pre>@WebRedirectUrl</pre>
-
-        <p>&nbsp;</p>
     }
-    else if (WizardForm.Type == Ios)
+    else
     {
-        <p><strong>iOS</strong></p>
-
-        <p>
-            Enter the Bundle ID of your app, which can be found in XCode
-            in the <code>Info.plist</code> or <code>Build Settings</code>.
-        </p>
-
-        <input class="form-control" @bind=IosBundleId @bind:event="oninput" placeholder="Bundle ID" />
-
-        <p>&nbsp;</p>
-
-        <p><strong>Redirect URI</strong></p>
-        <pre>msauth.@IosBundleId://auth</pre>
-
-        <p>&nbsp;</p>
+        <div class="buttonbar">
+            <button class="btn btn-light" @onclick=Cancel><i class="icon ion-md-return-left"></i> Cancel</button>
+        </div>
     }
-    else if (WizardForm.Type == Android)
-    {
-        <p><strong>Android</strong></p>
-
-        <p>
-            Enter the Package Name and Signature Hash of your app. The
-            Package Name can be found in your Android Manifest and the
-            Signature Hash can be generated via command line.
-            <a href="https://developer.android.com/studio/publish/app-signing"
-               target="_blank">More info about signing your Android app.</a>
-        </p>
-
-
-        <input class="form-control" @bind=AndroidPackageName @bind:event="oninput" placeholder="Package name" />
-        <input class="form-control" @bind=AndroidSignatureHash @bind:event="oninput" placeholder="Signature hash" />
-
-        <p>&nbsp;</p>
-
-        <p><strong>Redirect URI</strong></p>
-        <pre>msauth://@AndroidPackageName/@AndroidSignatureHash</pre>
-
-        <p>&nbsp;</p>
-    }
-
-    <button class="btn btn-primary" @onclick=Add><i class="icon ion-md-add"></i> Add Redirect URI</button>
-    <button class="btn btn-light" @onclick=Cancel><i class="icon ion-md-return-left"></i> Cancel</button>
-}
+</div>
 
 @code {
     private class Form { public string? Type { get; set; } }
@@ -137,7 +141,7 @@
         {
             if (WizardForm.Type == Web)
             {
-                client.RedirectUris.Add(WebRedirectUrl ?? "");
+                client.RedirectUris.Add(Uri.TryCreate(WebRedirectUrl, UriKind.Absolute, out var uri) ? uri.ToString() : null ?? "");
             }
             else if (WizardForm.Type == Ios)
             {

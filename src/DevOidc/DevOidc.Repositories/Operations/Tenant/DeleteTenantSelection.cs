@@ -15,6 +15,6 @@ namespace DevOidc.Repositories.Operations.Tenant
             _command = command;
         }
 
-        public Expression<Func<TenantEntity, bool>> Criteria => tenant => tenant.RowKey == _command.TenantId;
+        public Expression<Func<TenantEntity, bool>> Criteria => tenant => tenant.PartitionKey == _command.OwnerName && tenant.RowKey == _command.TenantId;
     }
 }

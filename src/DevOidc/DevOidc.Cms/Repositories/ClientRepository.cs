@@ -16,10 +16,14 @@ namespace DevOidc.Cms.Repositories
     public class ClientRepository : BaseMappedRepository<ClientCmsModel, ClientDto>
     {
         private readonly HttpClient _httpClient;
+        private readonly UserRepository _userRepository;
 
-        public ClientRepository(IHttpClientFactory httpClientFactory)
+        public ClientRepository(
+            IHttpClientFactory httpClientFactory,
+            UserRepository userRepository)
         {
             _httpClient = httpClientFactory.CreateClient("cms");
+            _userRepository = userRepository;
         }
 
         public override async Task DeleteAsync(string id, IParent? parent)

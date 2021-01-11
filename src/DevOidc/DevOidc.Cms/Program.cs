@@ -11,8 +11,10 @@ using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RapidCMS.Core.Abstractions.Setup;
 using RapidCMS.Core.Enums;
 using RapidCMS.UI.Components.Buttons;
+using Microsoft.Extensions.Logging;
 
 namespace DevOidc.Cms
 {
@@ -22,6 +24,8 @@ namespace DevOidc.Cms
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
+
+            builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
             builder.Services.AddAuthorizationCore();
 
@@ -46,11 +50,11 @@ namespace DevOidc.Cms
                 options.ProviderOptions.LoginMode = "redirect";
             });
 
-            builder.Services.AddTransient<ClientRepository>();
-            builder.Services.AddTransient<TenantRepository>();
-            builder.Services.AddTransient<UserRepository>();
+            builder.Services.AddSingleton<ClientRepository>();
+            builder.Services.AddSingleton<TenantRepository>();
+            builder.Services.AddSingleton<UserRepository>();
 
-            builder.Services.AddTransient<ResetPasswordButtonHandler>();
+            builder.Services.AddSingleton<ResetPasswordButtonHandler>();
 
             builder.Services.AddRapidCMSWebAssembly(config =>
             {
@@ -73,7 +77,7 @@ namespace DevOidc.Cms
 
                         x.AddRow(row =>
                         {
-                            row.AddField(x => x.Id).SetType(DisplayType.Pre);
+                            row.AddField(x => x.Id).SetName("Tenant Id").SetType(DisplayType.Pre);
                             row.AddField(x => x.OwnerName).SetName("Owner");
                             row.AddField(x => x.Name);
                             row.AddField(x => x.Description);
@@ -84,13 +88,14 @@ namespace DevOidc.Cms
 
                     config.SetNodeEditor(x =>
                     {
+                        x.AddDefaultButton(DefaultButtonType.Return);
                         x.AddDefaultButton(DefaultButtonType.Up);
-                        x.AddDefaultButton(DefaultButtonType.SaveNew);
+                        x.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                         x.AddDefaultButton(DefaultButtonType.Delete);
 
                         x.AddSection(section =>
                         {
-                            section.AddField(x => x.Id).SetType(DisplayType.Pre);
+                            section.AddField(x => x.Id).SetName("Tenant Id").SetType(DisplayType.Pre);
                             section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
@@ -118,11 +123,12 @@ namespace DevOidc.Cms
 
                             x.AddSection(section =>
                             {
-                                section.AddDefaultButton(DefaultButtonType.SaveExisting);
-                                section.AddDefaultButton(DefaultButtonType.SaveNew);
+                                section.AddDefaultButton(DefaultButtonType.SaveExisting, isPrimary: true);
+                                section.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                                 section.AddDefaultButton(DefaultButtonType.Edit, label: "Extra claims and clients");
                                 section.AddCustomButton<ResetPasswordButtonHandler>(typeof(DefaultButton), label: "Reset password", icon: "key");
 
+                                section.AddField(x => x.Id).SetName("User Id").SetType(DisplayType.Pre);
                                 section.AddField(x => x.FullName).SetName("Full name");
                                 section.AddField(x => x.UserName).SetName("User name");
                                 section.AddField(x => x.Password).DisableWhen((m, e) => true).VisibleWhen((m, e) => e == EntityState.IsExisting);
@@ -132,13 +138,15 @@ namespace DevOidc.Cms
                         config.SetNodeEditor(x =>
                         {
                             x.AddDefaultButton(DefaultButtonType.Up);
-                            x.AddDefaultButton(DefaultButtonType.SaveExisting);
-                            x.AddDefaultButton(DefaultButtonType.SaveNew);
+                            x.AddDefaultButton(DefaultButtonType.Return);
+                            x.AddDefaultButton(DefaultButtonType.SaveExisting, isPrimary: true);
+                            x.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                             x.AddDefaultButton(DefaultButtonType.Delete);
                             x.AddCustomButton<ResetPasswordButtonHandler>(typeof(DefaultButton), label: "Reset password", icon: "key");
 
                             x.AddSection(section =>
                             {
+                                section.AddField(x => x.Id).SetName("User Id").SetType(DisplayType.Pre);
                                 section.AddField(x => x.FullName).SetName("Full name");
                                 section.AddField(x => x.UserName).SetName("User name");
                                 section.AddField(x => x.Password).DisableWhen((m, e) => true);
@@ -172,11 +180,11 @@ namespace DevOidc.Cms
 
                             x.AddSection(section =>
                             {
-                                section.AddDefaultButton(DefaultButtonType.SaveExisting);
-                                section.AddDefaultButton(DefaultButtonType.SaveNew);
+                                section.AddDefaultButton(DefaultButtonType.SaveExisting, isPrimary: true);
+                                section.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                                 section.AddDefaultButton(DefaultButtonType.Edit, label: "Edit all properties");
 
-                                section.AddField(x => x.Id).SetType(DisplayType.Pre);
+                                section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre);
                                 section.AddField(x => x.Name);
                                 section.AddField(x => x.RedirectUris)
                                     .SetType(typeof(ListEditor))
@@ -188,13 +196,14 @@ namespace DevOidc.Cms
                         config.SetNodeEditor(x =>
                         {
                             x.AddDefaultButton(DefaultButtonType.Up);
-                            x.AddDefaultButton(DefaultButtonType.SaveExisting);
-                            x.AddDefaultButton(DefaultButtonType.SaveNew);
+                            x.AddDefaultButton(DefaultButtonType.Return);
+                            x.AddDefaultButton(DefaultButtonType.SaveExisting, isPrimary: true);
+                            x.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                             x.AddDefaultButton(DefaultButtonType.Delete);
 
                             x.AddSection(section =>
                             {
-                                section.AddField(x => x.Id).SetType(DisplayType.Pre);
+                                section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre);
                                 section.AddField(x => x.Name);
                                 section.AddField(x => x.ExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims").SetDescription("In JWT token");
                                 section.AddField(x => x.Scopes).SetType(typeof(ScopeEditor)).SetName("Allowed scopes");
@@ -211,7 +220,11 @@ namespace DevOidc.Cms
                 });
             });
 
-            await builder.Build().RunAsync();
+            var host = builder.Build();
+
+            host.Services.GetRequiredService<ICms>().IsDevelopment = true;
+
+            await host.RunAsync();
         }
     }
 }
