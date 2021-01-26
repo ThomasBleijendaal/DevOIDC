@@ -55,7 +55,10 @@ namespace DevOidc.Functions.Validators
 
                 var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
 
-                var tokenValidator = new JwtSecurityTokenHandler();
+                var tokenValidator = new JwtSecurityTokenHandler
+                {
+                    MapInboundClaims = false
+                };
 
                 var validationParameters = new TokenValidationParameters
                 {
@@ -66,7 +69,7 @@ namespace DevOidc.Functions.Validators
                     ValidateIssuer = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKeys = oidcWellknownEndpoints.SigningKeys,
-                    ValidIssuer = $"{validIssuer ?? instanceUri}/"
+                    ValidIssuer = $"{validIssuer ?? instanceUri}"
                 };
 
                 var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);

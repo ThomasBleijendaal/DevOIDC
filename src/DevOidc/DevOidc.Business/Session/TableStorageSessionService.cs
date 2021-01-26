@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
@@ -35,7 +36,7 @@ namespace DevOidc.Business.Session
             _createSessionCommandHandler = createSessionCommandHandler;
         }
 
-        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
         {
             var createCommand = new CreateSessionCommand(tenantId, user, client, scope, requestedScopes);
 
@@ -44,7 +45,7 @@ namespace DevOidc.Business.Session
             return createCommand.SessionId ?? throw new ConflictException();
         }
 
-        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant == null)
@@ -63,7 +64,8 @@ namespace DevOidc.Business.Session
                     Scope = scope,
                     Tenant = tenant,
                     User = user,
-                    RequestedScopes = requestedScopes
+                    RequestedScopes = requestedScopes.ToList(),
+                    Nonce = nonce
                 });
 
             return refreshCode;
@@ -92,10 +94,11 @@ namespace DevOidc.Business.Session
             return new SessionDto
             {
                 Client = client,
-                RequestedScopes = session.RequestedScopes,
+                RequestedScopes = session.RequestedScopes.ToList(),
                 Scope = scope,
                 Tenant = tenant,
-                User = user
+                User = user,
+                Nonce = session.Nonce
             };
         }
 

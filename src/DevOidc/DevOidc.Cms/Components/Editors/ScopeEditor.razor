@@ -28,7 +28,7 @@
                                class="form-control" />
                     </div>
                     <div class="col col-md-1">
-                        <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><i class="icon ion-md-trash"></i></button>
+                        <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><Icon Name="Remove" /></button>
                     </div>
                 </div>
             </div>
@@ -39,7 +39,7 @@
         <div class="form-check">
             <div class="row">
                 <div class="col">
-                    <button class="btn btn-light" @onclick=AddRow><i class="icon ion-md-add"></i> Add scope</button>
+                    <button class="btn btn-light" @onclick=AddRow><Icon Name="Add" /> Add scope</button>
                 </div>
             </div>
         </div>

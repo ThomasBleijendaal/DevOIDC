@@ -1,11 +1,12 @@
-﻿using DevOidc.Core.Models;
+﻿using System.Collections.Generic;
+using DevOidc.Core.Models;
 using DevOidc.Repositories.Abstractions;
 
 namespace DevOidc.Repositories.Commands.Session
 {
     public class CreateSessionCommand : ICommand
     {
-        public CreateSessionCommand(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+        public CreateSessionCommand(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes)
         {
             TenantId = tenantId;
             User = user;
@@ -18,7 +19,7 @@ namespace DevOidc.Repositories.Commands.Session
         public UserDto User { get; }
         public ClientDto Client { get; }
         public ScopeDto Scope { get; }
-        public string? RequestedScopes { get; }
+        public IEnumerable<string> RequestedScopes { get; }
 
         public string? SessionId { get; internal set; }
     }

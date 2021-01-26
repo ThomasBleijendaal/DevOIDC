@@ -111,7 +111,7 @@ namespace DevOidc.Cms
                         });
                     });
 
-                    config.AddSubCollection<UserCmsModel, UserRepository>("user", "Users", config =>
+                    config.AddSubCollection<UserCmsModel, UserRepository>("user", "Contact", "Green10", "Users", config =>
                     {
                         config.SetTreeView(x => x.FullName);
 
@@ -168,7 +168,7 @@ namespace DevOidc.Cms
                         });
                     });
 
-                    config.AddSubCollection<ClientCmsModel, ClientRepository>("client", "Clients", config =>
+                    config.AddSubCollection<ClientCmsModel, ClientRepository>("client", "Devices2", "Red10", "Clients", config =>
                     {
                         config.SetTreeView(x => x.Name);
 
@@ -213,7 +213,7 @@ namespace DevOidc.Cms
                             {
                                 section.AddField(x => x.RedirectUris).SetType(typeof(ListEditor)).SetName("Redirect URIs");
 
-                                section.AddPaneButton(typeof(RedirectUrlPane), "Add Redirect URI using wizard", "add", CrudType.None);
+                                section.AddPaneButton(typeof(RedirectUrlPane), "Add Redirect URI using wizard", "add");
                             });
                         });
                     });

@@ -2,6 +2,7 @@
 using Azure.Data.Tables;
 using DevOidc.Business.Abstractions;
 using DevOidc.Business.Providers;
+using DevOidc.Business.Scopes;
 using DevOidc.Business.Session;
 using DevOidc.Business.Tenant;
 using DevOidc.Functions;
@@ -34,6 +35,7 @@ namespace DevOidc.Functions
 
             builder.Services.AddTransient<IJwtProvider, RS256JwtProvider>();
             builder.Services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
+            builder.Services.AddTransient<IScopeProvider, ScopeProvider>();
 
             var tableCredentials = new TableSharedKeyCredential(config["Table:AccountName"], config["Table:AccountKey"]);
 

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Newtonsoft.Json;
 
@@ -19,14 +18,11 @@ namespace DevOidc.Functions.Models.Request
         [JsonIgnore]
         public IEnumerable<string> Scopes => Scope?.Split(' ') ?? Enumerable.Empty<string>();
 
-        [JsonIgnore]
-        public IEnumerable<string> CustomScopes => Scopes.Except(new[] { "openid", "offline_access" });
-
         [JsonProperty("response_mode")]
-        public string? ResponseMode { get; set; }
+        public string? ResponseMode { get; set; } = "query";
 
         [JsonProperty("response_type")]
-        public string? ResponseType { get; set; }
+        public string? ResponseType { get; set; } = "code";
 
         [JsonProperty("error")]
         public string? Error { get; set; }
@@ -36,5 +32,11 @@ namespace DevOidc.Functions.Models.Request
 
         [JsonProperty("password")]
         public string? Password { get; set; }
+
+        [JsonProperty("state")]
+        public string? State { get; set; }
+
+        [JsonProperty("nonce")]
+        public string? Nonce { get; set; }
     }
 }

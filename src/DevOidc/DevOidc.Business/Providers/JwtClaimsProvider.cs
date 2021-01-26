@@ -22,9 +22,10 @@ namespace DevOidc.Business.Providers
             var dict = new Dictionary<string, object>
             {
                 { "sub", user.UserId },
-                { "iss", $"{baseUri}{client.TenantId}/" },
+                { "iss", $"{baseUri}{client.TenantId}" },
                 { "aud", scope.ScopeId },
-                { "email", user.UserName }
+                { "email", user.UserName },
+                { "name", user.FullName }
             };
 
             AddClaims(client.ExtraClaims, dict);
@@ -33,17 +34,22 @@ namespace DevOidc.Business.Providers
             return dict;
         }
 
-        public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope)
+        public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope, string? nonce)
         {
             var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
 
             var dict = new Dictionary<string, object>
             {
                 { "sub", user.UserId },
-                { "iss", $"{baseUri}{client.TenantId}/" },
+                { "iss", $"{baseUri}{client.TenantId}" },
                 { "aud", scope.ScopeId },
                 { "name", user.FullName }
             };
+
+            if (!string.IsNullOrWhiteSpace(nonce))
+            {
+                dict.Add("nonce", nonce!);
+            }
 
             return dict;
         }

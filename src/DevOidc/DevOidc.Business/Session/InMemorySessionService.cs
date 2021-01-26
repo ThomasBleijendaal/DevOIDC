@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
@@ -21,13 +22,13 @@ namespace DevOidc.Business.Session
             _tenantService = tenantService;
         }
 
-        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
-            => await StoreSession("lls", tenantId, user, client, scope, requestedScopes);
+        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
+            => await StoreSession("lls", tenantId, user, client, scope, requestedScopes, nonce);
 
-        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
-            => await StoreSession("sls", tenantId, user, client, scope, requestedScopes);
+        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
+            => await StoreSession("sls", tenantId, user, client, scope, requestedScopes, nonce);
 
-        private async Task<string> StoreSession(string type, string tenantId, UserDto user, ClientDto client, ScopeDto scope, string? requestedScopes)
+        private async Task<string> StoreSession(string type, string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant == null)
@@ -43,10 +44,11 @@ namespace DevOidc.Business.Session
                 new SessionDto
                 {
                     Client = client,
+                    Nonce = nonce,
                     Scope = scope,
                     Tenant = tenant,
                     User = user,
-                    RequestedScopes = requestedScopes
+                    RequestedScopes = requestedScopes.ToList()
                 });
 
             return refreshCode;
@@ -72,6 +74,7 @@ namespace DevOidc.Business.Session
             var restoredSession = new SessionDto
             {
                 Client = client,
+                Nonce = storedSession.Nonce,
                 Scope = client.Scopes.First(x => x.ScopeId == storedSession.Scope.ScopeId),
                 Tenant = tenant,
                 User = user

@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
+using DevOidc.Core.Models;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
 using Microsoft.AspNetCore.Http;
@@ -11,23 +12,27 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 namespace DevOidc.Functions.Functions
 {
     // TODO: test CORS for SPA / Web
+    // TODO: test nonce for refesh tokens
     public class TokenFunctions
     {
         private readonly ISessionService _sessionService;
         private readonly ITenantService _tenantService;
         private readonly IJwtProvider _jwtProvider;
         private readonly IClaimsProvider _claimsProvider;
+        private readonly IScopeProvider _scopeProvider;
 
         public TokenFunctions(
             ISessionService sessionService,
             ITenantService tenantService,
             IJwtProvider jwtProvider,
-            IClaimsProvider claimsProvider)
+            IClaimsProvider claimsProvider,
+            IScopeProvider scopeProvider)
         {
             _sessionService = sessionService;
             _tenantService = tenantService;
             _jwtProvider = jwtProvider;
             _claimsProvider = claimsProvider;
+            _scopeProvider = scopeProvider;
         }
 
         [FunctionName(nameof(GetTokenByCodeAsync))]
@@ -46,7 +51,7 @@ namespace DevOidc.Functions.Functions
                 return new BadRequestResult();
             }
 
-            var session = isRefreshToken 
+            var session = isRefreshToken
                 ? await _sessionService.GetLongLivedSessionAsync(tenantId, code)
                 : await _sessionService.GetSessionAsync(tenantId, code);
             if (session == null)
@@ -68,13 +73,21 @@ namespace DevOidc.Functions.Functions
                 });
             }
 
-            var accessTokenClaims = _claimsProvider.CreateAccessTokenClaims(session.User, session.Client, session.Scope);
-            var idTokenClaims = session.RequestedScopes?.Contains("offline_access") != true ? default : _claimsProvider.CreateIdTokenClaims(session.User, session.Client, session.Scope);
+            var accessToken = default(string);
+            var idToken = default(string);
 
-            var accessToken = _jwtProvider.CreateJwt(accessTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
-            var idToken = idTokenClaims == null ? null : _jwtProvider.CreateJwt(idTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
+            if (_scopeProvider.AccessTokenRequested(session.RequestedScopes))
+            {
+                var accessTokenClaims =_claimsProvider.CreateAccessTokenClaims(session.User, session.Client, session.Scope);
+                accessToken = _jwtProvider.CreateJwt(accessTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
+            }
+            if (_scopeProvider.IdTokenRequested(session.RequestedScopes))
+            {
+                var idTokenClaims = _claimsProvider.CreateIdTokenClaims(session.User, session.Client, new ScopeDto { ScopeId = session.Client.ClientId }, session.Nonce);
+                idToken = _jwtProvider.CreateJwt(idTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
+            }
 
-            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope, session.RequestedScopes);
+            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope, session.RequestedScopes, session.Nonce);
 
             return new OkObjectResult(new TokenResponseModel
             {

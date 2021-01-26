@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using DevOidc.Core.Models;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Entities;
+using Newtonsoft.Json;
 
 namespace DevOidc.Repositories.Specifications.Session
 {
@@ -23,7 +25,7 @@ namespace DevOidc.Repositories.Specifications.Session
             ScopeId = session.ScopeId ?? "",
             TenantId = session.PartitionKey,
             UserId = session.UserId ?? "",
-            RequestedScopes = session.RequestedScopes ?? ""
+            RequestedScopes = JsonConvert.DeserializeObject<List<string>>(session.RequestedScopes ?? "[]") ?? new List<string>()
         };
 
         public Expression<Func<SessionEntity, bool>> Criteria => session => session.PartitionKey == _tenantId && session.RowKey == _sessionId;
