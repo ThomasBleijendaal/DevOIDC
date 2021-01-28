@@ -40,8 +40,6 @@ namespace DevOidc.Business.Tenant
             return CheckIfUserHasAccessToClient(clientId, user);
         }
 
-        
-
         public async Task<TenantDto?> GetTenantAsync(string tenantId)
             => await _tenantRepository.GetAsync(new GetTenantSpecification(tenantId));
 

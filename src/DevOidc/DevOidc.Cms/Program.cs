@@ -15,6 +15,7 @@ using RapidCMS.Core.Abstractions.Setup;
 using RapidCMS.Core.Enums;
 using RapidCMS.UI.Components.Buttons;
 using Microsoft.Extensions.Logging;
+using DevOidc.Core.Models;
 
 namespace DevOidc.Cms
 {
@@ -68,6 +69,9 @@ namespace DevOidc.Cms
                 config.AddCollection<TenantCmsModel, TenantRepository>("tenant", "Tenants", config =>
                 {
                     config.SetTreeView(EntityVisibilty.Visible, CollectionRootVisibility.Hidden, x => x.Name, showEntitiesOnStartup: true);
+
+                    config.AddDataView("My", x => true);
+                    config.AddDataView("Others", x => true);
 
                     config.SetListView(x =>
                     {
@@ -184,8 +188,8 @@ namespace DevOidc.Cms
                                 section.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
                                 section.AddDefaultButton(DefaultButtonType.Edit, label: "Edit all properties");
 
-                                section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre);
-                                section.AddField(x => x.Name);
+                                section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre).SetOrderByExpression(x => x.Id, OrderByType.None);
+                                section.AddField(x => x.Name).SetOrderByExpression(x => x.Name, OrderByType.Ascending);
                                 section.AddField(x => x.RedirectUris)
                                     .SetType(typeof(ListEditor))
                                     .DisableWhen((m, s) => true)

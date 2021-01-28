@@ -36,7 +36,9 @@ namespace DevOidc.Functions.Functions
                 Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}",
                 AuthorizationEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/authorize",
                 ClaimsSupported = new[] { "sub", "iss", "aud", "exp", "email" },
-                TenantRegionScope = "EU"
+                TenantRegionScope = "EU",
+                EndSessionEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/logout",
+                HttpLogoutSupported = true
             });
         }
 

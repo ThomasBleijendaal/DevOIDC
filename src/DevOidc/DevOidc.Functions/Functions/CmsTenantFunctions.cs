@@ -64,12 +64,22 @@ namespace DevOidc.Functions.Functions
             return new OkObjectResult(tenant);
         }
 
-        [FunctionName(nameof(GetTenantsAsync))]
-        public async Task<IActionResult> GetTenantsAsync(
+        [FunctionName(nameof(GetMyTenantsAsync))]
+        public async Task<IActionResult> GetMyTenantsAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cms/tenant")] HttpRequest req)
         {
             var user = await GetValidUserAsync();
             var tenants = await _tenantManagementService.GetTenantsAsync(user.Identity?.Name ?? "-unknown-");
+
+            return new OkObjectResult(tenants);
+        }
+
+        [FunctionName(nameof(GetOtherTenantsAsync))]
+        public async Task<IActionResult> GetOtherTenantsAsync(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "cms/tenant/other")] HttpRequest req)
+        {
+            var user = await GetValidUserAsync();
+            var tenants = await _tenantManagementService.GetTenantsOfOthersAsync(user.Identity?.Name ?? "-unknown-");
 
             return new OkObjectResult(tenants);
         }

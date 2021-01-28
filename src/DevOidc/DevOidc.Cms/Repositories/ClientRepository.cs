@@ -13,7 +13,7 @@ using RapidCMS.Core.Repositories;
 
 namespace DevOidc.Cms.Repositories
 {
-    public class ClientRepository : BaseMappedRepository<ClientCmsModel, ClientDto>
+    public class ClientRepository : BaseRepository<ClientCmsModel>
     {
         private readonly HttpClient _httpClient;
         private readonly UserRepository _userRepository;
@@ -36,7 +36,7 @@ namespace DevOidc.Cms.Repositories
             await _httpClient.DeleteAsync($"client/{tenant.Id}/{id}");
         }
 
-        public override async Task<IEnumerable<ClientCmsModel>> GetAllAsync(IParent? parent, IQuery<ClientDto> query)
+        public override async Task<IEnumerable<ClientCmsModel>> GetAllAsync(IParent? parent, IQuery<ClientCmsModel> query)
         {
             if (parent?.Entity is not TenantCmsModel tenant || string.IsNullOrWhiteSpace(tenant.Id))
             {
@@ -49,7 +49,7 @@ namespace DevOidc.Cms.Repositories
                 return Enumerable.Empty<ClientCmsModel>();
             }
 
-            return clients.Select(client => client.MapToClientCmsModel());
+            return query.ApplyOrder(clients.Select(client => client.MapToClientCmsModel()).AsQueryable());
         }
 
         public override async Task<ClientCmsModel?> GetByIdAsync(string id, IParent? parent)

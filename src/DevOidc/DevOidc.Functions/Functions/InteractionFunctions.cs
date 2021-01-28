@@ -96,8 +96,7 @@ namespace DevOidc.Functions.Functions
                     { "password", "password" }
                 },
                 "Sign in",
-                message,
-                hasButton: string.IsNullOrWhiteSpace(message));
+                message);
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -145,6 +144,16 @@ namespace DevOidc.Functions.Functions
             {
                 return RedirectToLogin("invalid_request", "Response type not supported", req, requestModel);
             }
+        }
+
+        [FunctionName(nameof(SignOut))]
+        public HttpResponseMessage SignOut(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequest req,
+            string tenantId)
+        {
+            var model = req.BindModelToQuery<OidcLogoutRequestModel>();
+
+            return RedirectToClientApp(model);
         }
 
         private static HttpResponseMessage RedirectToLogin(string error, string errorDescription, HttpRequest req, OidcAuthorizeRequestModel requestModel)
@@ -223,6 +232,26 @@ namespace DevOidc.Functions.Functions
                 response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}");
                 return response;
             }
+        }
+
+        private HttpResponseMessage RedirectToClientApp(OidcLogoutRequestModel logoutModel)
+        {
+            var body = FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "state", logoutModel.State }
+                },
+                new Dictionary<string, string>(),
+                "Click to sign out",
+                string.IsNullOrWhiteSpace(logoutModel.LogoutRedirectUri) ? "Redirect Url is empty!" : default,
+                logoutModel.LogoutRedirectUri);
+
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
+            };
+
+            return response;
         }
     }
 }

@@ -44,6 +44,9 @@ namespace DevOidc.Business.Tenant
         public async Task<IReadOnlyList<TenantDto>> GetTenantsAsync(string ownerName)
             => await _readRepository.GetListAsync(new GetAllTenantsSpecification(ownerName));
 
+        public async Task<IReadOnlyList<TenantDto>> GetTenantsOfOthersAsync(string ownerName)
+            => await _readRepository.GetListAsync(new GetAllOtherTenantsSpecification(ownerName));
+
         public async Task DeleteTenantAsync(string ownerName, string tenantId)
         {
             await _deleteTenantCommandHandler.HandleAsync(new DeleteTenantCommand(ownerName, tenantId));

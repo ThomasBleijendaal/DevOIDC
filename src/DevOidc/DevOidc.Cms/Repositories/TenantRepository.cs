@@ -29,7 +29,9 @@ namespace DevOidc.Cms.Repositories
 
         public override async Task<IEnumerable<TenantCmsModel>> GetAllAsync(IParent? parent, IQuery<TenantCmsModel> query)
         {
-            var tenants = JsonConvert.DeserializeObject<IEnumerable<TenantDto>>(await _httpClient.GetStringAsync("tenant"));
+            var urlSuffix = query.ActiveDataView?.Label.ToLower() switch { "others" => "/other", _ => "" };
+
+            var tenants = JsonConvert.DeserializeObject<IEnumerable<TenantDto>>(await _httpClient.GetStringAsync($"tenant{urlSuffix}"));
             if (tenants == null)
             {
                 return Enumerable.Empty<TenantCmsModel>();

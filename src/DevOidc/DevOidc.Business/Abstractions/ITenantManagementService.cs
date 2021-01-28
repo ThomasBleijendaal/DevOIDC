@@ -7,6 +7,7 @@ namespace DevOidc.Business.Abstractions
     public interface ITenantManagementService
     {
         Task<IReadOnlyList<TenantDto>> GetTenantsAsync(string ownerName);
+        Task<IReadOnlyList<TenantDto>> GetTenantsOfOthersAsync(string ownerName);
         Task DeleteTenantAsync(string ownerName, string tenantId);
         Task<string> CreateTenantAsync(string ownerName, TenantDto tenant);
     }
