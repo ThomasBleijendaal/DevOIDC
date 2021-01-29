@@ -45,6 +45,10 @@ namespace DevOidc.Functions.Functions
             string tenantId)
         {
             var requestModel = req.BindModelToQuery<OidcAuthorizeRequestModel>();
+            if (requestModel.Prompt == "none")
+            {
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            }
 
             var message = requestModel.Error switch
             {
@@ -197,7 +201,7 @@ namespace DevOidc.Functions.Functions
             else
             {
                 var response = new HttpResponseMessage(HttpStatusCode.Found);
-                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}id_token={idToken}");
+                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}id_token={idToken}&state={requestModel.State}");
                 return response;
             }
         }
@@ -229,7 +233,7 @@ namespace DevOidc.Functions.Functions
             else
             {
                 var response = new HttpResponseMessage(HttpStatusCode.Found);
-                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}");
+                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}&state={requestModel.State}");
                 return response;
             }
         }

@@ -9,6 +9,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
+    // TODO: CORS on these endpoints
     public class DiscoveryFunctions
     {
         private readonly ITenantService _tenantService;
@@ -26,19 +27,20 @@ namespace DevOidc.Functions.Functions
             return new OkObjectResult(new MetadataResponseModel
             {
                 TokenEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/token",
-                TokenEndpointAuthMethodsSupported = new[] { "private_key_jwt" },
+                TokenEndpointAuthMethodsSupported = new[] { "client_secret_post", "private_key_jwt", "client_secret_basic" },
                 JwksUri = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/discovery/keys",
                 ResponseModesSupported = new[] { "query", "fragment", "form_post" },
                 SubjectTypesSupported = new[] { "pairwise" },
                 IdTokenSigningAlgValuesSupported = new[] { "RS256" },
-                ResponseTypesSupported = new[] { "code", "id_token" },
-                ScopesSupported = new[] { "openid", "offline_access", "profile" },
+                ResponseTypesSupported = new[] { "code", "id_token", "code id_token", "token id_token", "token" },
+                ScopesSupported = new[] { "openid" },
                 Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}",
                 AuthorizationEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/authorize",
                 ClaimsSupported = new[] { "sub", "iss", "aud", "exp", "email" },
                 TenantRegionScope = "EU",
                 EndSessionEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/logout",
-                HttpLogoutSupported = true
+                HttpLogoutSupported = true,
+                CheckSessionIframe = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/checksession"
             });
         }
 

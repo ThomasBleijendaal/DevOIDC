@@ -25,7 +25,8 @@ namespace DevOidc.Business.Providers
                 { "iss", $"{baseUri}{client.TenantId}/" },
                 { "aud", scope.ScopeId },
                 { "email", user.UserName },
-                { "name", user.FullName }
+                { "name", user.FullName },
+                { "__dev-oidc-token_type", "access-token" }
             };
 
             AddClaims(client.ExtraClaims, dict);
@@ -43,7 +44,8 @@ namespace DevOidc.Business.Providers
                 { "sub", user.UserId },
                 { "iss", $"{baseUri}{client.TenantId}/" },
                 { "aud", scope.ScopeId },
-                { "name", user.FullName }
+                { "name", user.FullName },
+                { "__dev-oidc-token_type", "id-token" }
             };
 
             if (!string.IsNullOrWhiteSpace(nonce))

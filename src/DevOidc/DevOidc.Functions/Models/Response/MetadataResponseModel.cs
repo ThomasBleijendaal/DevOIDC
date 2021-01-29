@@ -60,5 +60,8 @@ namespace DevOidc.Functions.Models.Response
 
         [JsonProperty("cloud_instance_name")]
         public string? CloudInstanceName { get; set; }
+
+        [JsonProperty("check_session_iframe")]
+        public string? CheckSessionIframe { get; set; }
     }
 }

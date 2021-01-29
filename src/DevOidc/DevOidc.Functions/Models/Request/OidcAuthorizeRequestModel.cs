@@ -38,5 +38,8 @@ namespace DevOidc.Functions.Models.Request
 
         [JsonProperty("nonce")]
         public string? Nonce { get; set; }
+
+        [JsonProperty("prompt")]
+        public string? Prompt { get; set; }
     }
 }

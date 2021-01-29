@@ -13,6 +13,6 @@ namespace DevOidc.Business.Scopes
             => scopes.Except(new[] { "openid", "offline_access", "profile" });
 
         public bool IdTokenRequested(IEnumerable<string> scopes)
-            => !GetCustomScopes(scopes.Except(new[] { "offline_access" })).Any();
+            => true; // GetCustomScopes(scopes.Except(new[] { "offline_access" })).Any();
     }
 }

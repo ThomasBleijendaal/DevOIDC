@@ -36,11 +36,11 @@ namespace DevOidc.Functions.Views
 body {{ background: ##b6dff0;  }}
 h1 {{ color: #8a8886; }}
 div {{ margin: 2rem; padding: 1rem; background: #fed9cc; box-shadow: 0 25.6px 57.6px 0 rgba(0,0,0,.22),0 4.8px 14.4px 0 rgba(0,0,0,.18); }}
-fieldset {{ margin: 2rem; padding: 1rem; background: #fff; border: 1px solid #bebbb8; box-shadow: 0 25.6px 57.6px 0 rgba(0,0,0,.22),0 4.8px 14.4px 0 rgba(0,0,0,.18); }}
+fieldset {{ margin: 2rem; padding: 1rem; background: #fff; box-shadow: 0 25.6px 57.6px 0 rgba(0,0,0,.22),0 4.8px 14.4px 0 rgba(0,0,0,.18); border: 0; }}
 label {{ display: block; margin: .2rem; float: left; width: 15%; }}
 input {{ display: block; margin: .2rem; float: right; width: 80%; border: 1px solid #979593; border-radius: 0; }}
 input[readonly] {{ background-color: #edebe9; }}
-button {{ margin: 1rem .2rem 1rem; background-color: #4f6bed; border: 0; padding: .7rem; color: white; cursor: pointer; border-radius: 0; }}
+button {{ margin: 1rem .2rem 1rem; background-color: #4f6bed; border: 0; padding: .7rem; color: white; cursor: pointer; border-radius: 0 !important; }}
 button:hover {{ background-color: #4661d5; }}
 </style>
 </head>

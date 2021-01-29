@@ -96,7 +96,8 @@ namespace DevOidc.Functions.Functions
                 ExtExpiresIn = (int)session.Tenant.TokenLifetime.TotalSeconds,
                 AccessToken = accessToken,
                 RefreshToken = refreshCode,
-                IdToken = idToken
+                IdToken = idToken,
+                Scope = string.Join(" ", session.RequestedScopes)
             });
         }
     }
