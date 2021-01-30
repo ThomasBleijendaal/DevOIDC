@@ -11,8 +11,9 @@ namespace DevOidc.Functions.Views
             string buttonText,
             string? messageText,
             string? url = null,
-            bool hasButton = true)
-        => $@"<form method=""post""{(string.IsNullOrEmpty(url) ? "" : $@" action=""{url}""")}>
+            bool hasButton = true,
+            string method = "post")
+        => $@"<form method=""{method}""{(string.IsNullOrEmpty(url) ? "" : $@" action=""{url}""")}>
 {(string.IsNullOrWhiteSpace(messageText) ? "" : $"<div>{messageText}</div>")}
 <fieldset>
 <h1>DevOIDC</h1>

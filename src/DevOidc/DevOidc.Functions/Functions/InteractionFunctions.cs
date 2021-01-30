@@ -248,7 +248,8 @@ namespace DevOidc.Functions.Functions
                 new Dictionary<string, string>(),
                 "Click to sign out",
                 string.IsNullOrWhiteSpace(logoutModel.LogoutRedirectUri) ? "Redirect Url is empty!" : default,
-                logoutModel.LogoutRedirectUri);
+                logoutModel.LogoutRedirectUri,
+                method: "get");
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
