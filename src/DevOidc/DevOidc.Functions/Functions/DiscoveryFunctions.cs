@@ -40,7 +40,8 @@ namespace DevOidc.Functions.Functions
                 TenantRegionScope = "EU",
                 EndSessionEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/logout",
                 HttpLogoutSupported = true,
-                CheckSessionIframe = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/checksession"
+                CheckSessionIframe = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/checksession",
+                UserinfoEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/oidc/userinfo",
             });
         }
 

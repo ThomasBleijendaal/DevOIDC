@@ -22,7 +22,7 @@ namespace DevOidc.Business.Providers
             var dict = new Dictionary<string, object>
             {
                 { "sub", user.UserId },
-                { "iss", $"{baseUri}{client.TenantId}/" },
+                { "iss", $"{baseUri}{client.TenantId}" },
                 { "aud", scope.ScopeId },
                 { "email", user.UserName },
                 { "name", user.FullName },
@@ -42,7 +42,7 @@ namespace DevOidc.Business.Providers
             var dict = new Dictionary<string, object>
             {
                 { "sub", user.UserId },
-                { "iss", $"{baseUri}{client.TenantId}/" },
+                { "iss", $"{baseUri}{client.TenantId}" },
                 { "aud", scope.ScopeId },
                 { "name", user.FullName },
                 { "__dev-oidc-token_type", "id-token" }

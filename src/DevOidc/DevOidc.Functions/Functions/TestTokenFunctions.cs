@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using DevOidc.Core.Extensions;
 using DevOidc.Functions.Abstractions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
+using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Functions
 {
@@ -20,7 +23,7 @@ namespace DevOidc.Functions.Functions
         }
 
         [FunctionName(nameof(TestOidcTokenAsync))]
-        public async Task<IActionResult> TestOidcTokenAsync(
+        public async Task<HttpResponseMessage> TestOidcTokenAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequest req,
             string tenantId,
             string clientId,
@@ -31,15 +34,48 @@ namespace DevOidc.Functions.Functions
                 var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
                 var user = await _authenticationValidator.GetValidUserAsync(instance, clientId, scope);
 
-                return new OkObjectResult(new
-                {
-                    claims = user.Claims.ToDictionary(x => x.Type, x => x.Value)
-                });
+                return ClaimsAsJson(user);
             }
             catch (Exception ex)
             {
-                return new OkObjectResult(ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    Content = new StringContent(ex.Message)
+                };
             }
+        }
+
+        [FunctionName(nameof(GetUserInfoAsync))]
+        public async Task<HttpResponseMessage> GetUserInfoAsync(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/oidc/userinfo")] HttpRequest req,
+            string tenantId)
+        {
+            try
+            {
+                var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
+                var user = await _authenticationValidator.GetClaimsAysnc(instance);
+
+                // TODO: tenant configuration to add more stuff to this user info
+
+                return ClaimsAsJson(user);
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
+                {
+                    Content = new StringContent(ex.Message)
+                };
+            }
+        }
+
+        private static HttpResponseMessage ClaimsAsJson(System.Security.Claims.ClaimsPrincipal user)
+        {
+            var json = JsonConvert.SerializeObject(user.Claims.ToDictionary(x => x.Type, x => x.Value));
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
         }
     }
 }

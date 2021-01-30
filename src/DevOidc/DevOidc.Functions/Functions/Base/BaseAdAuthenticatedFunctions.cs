@@ -25,6 +25,6 @@ namespace DevOidc.Functions.Functions.Base
                 new Uri(new Uri(_config.Instance), _config.TenantId),
                 _config.ClientId,
                 _config.ValidAudience,
-                new Uri(new Uri(_config.Issuer), _config.TenantId));
+                new Uri(new Uri(_config.Issuer), $"{_config.TenantId}/"));
     }
 }

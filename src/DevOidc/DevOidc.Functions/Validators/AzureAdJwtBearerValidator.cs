@@ -26,28 +26,10 @@ namespace DevOidc.Functions.Validators
             _logger = logger;
         }
 
-        public async Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope, Uri? validIssuer = default)
+        public async Task<ClaimsPrincipal> GetClaimsAysnc(Uri instanceUri)
         {
-            var httpContext = _httpContextAccessor.HttpContext;
-
-            var wellKnownEndpoint = $"{instanceUri}/.well-known/openid-configuration";
-
-            var documentRetriever = new HttpDocumentRetriever()
-            {
-                RequireHttps = instanceUri.Scheme == "https"
-            };
-
-            var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
-
-            _httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorizationHeaders);
-            var authorizationHeader = authorizationHeaders.ToString();
-
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.Contains("Bearer "))
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            var accessToken = authorizationHeader["Bearer ".Length..];
+            var configurationManager = BuildConfigurationManager(instanceUri);
+            var accessToken = GetAccessToken();
 
             try
             {
@@ -55,7 +37,49 @@ namespace DevOidc.Functions.Validators
 
                 var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
 
-                var tokenValidator = new JwtSecurityTokenHandler();
+                var tokenValidator = new JwtSecurityTokenHandler
+                {
+                    MapInboundClaims = false
+                };
+
+                var validationParameters = new TokenValidationParameters
+                {
+                    RequireSignedTokens = true,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuer = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKeys = oidcWellknownEndpoints.SigningKeys,
+                    ValidIssuer = $"{instanceUri}"
+                };
+
+                var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
+                return claimsPrincipal;
+            }
+            catch (Exception ex) when (ex is not UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "Exception thrown during token validation.");
+
+                throw new UnauthorizedAccessException(ex.Message);
+            }
+        }
+
+        public async Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope, Uri? validIssuer = default)
+        {
+            var configurationManager = BuildConfigurationManager(instanceUri);
+            var accessToken = GetAccessToken();
+
+            try
+            {
+                IdentityModelEventSource.ShowPII = true;
+
+                var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
+
+                var tokenValidator = new JwtSecurityTokenHandler
+                {
+                    // TODO: tenant configuration
+                    MapInboundClaims = instanceUri.AbsoluteUri.Contains("microsoft")
+                };
 
                 var validationParameters = new TokenValidationParameters
                 {
@@ -66,7 +90,7 @@ namespace DevOidc.Functions.Validators
                     ValidateIssuer = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKeys = oidcWellknownEndpoints.SigningKeys,
-                    ValidIssuer = $"{validIssuer ?? instanceUri}/"
+                    ValidIssuer = $"{validIssuer ?? instanceUri}"
                 };
 
                 var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
@@ -83,6 +107,33 @@ namespace DevOidc.Functions.Validators
 
                 throw new UnauthorizedAccessException(ex.Message);
             }
+        }
+
+        private static ConfigurationManager<OpenIdConnectConfiguration> BuildConfigurationManager(Uri instanceUri)
+        {
+            var wellKnownEndpoint = $"{instanceUri}/.well-known/openid-configuration";
+
+            var documentRetriever = new HttpDocumentRetriever()
+            {
+                RequireHttps = instanceUri.Scheme == "https"
+            };
+
+            var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
+            return configurationManager;
+        }
+
+        private string GetAccessToken()
+        {
+            _httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorizationHeaders);
+            var authorizationHeader = authorizationHeaders.ToString();
+
+            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.Contains("Bearer "))
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            var accessToken = authorizationHeader["Bearer ".Length..];
+            return accessToken;
         }
 
         private bool IsClaimValid(string claimName, string requiredClaimValue, ClaimsPrincipal claimsPrincipal)
