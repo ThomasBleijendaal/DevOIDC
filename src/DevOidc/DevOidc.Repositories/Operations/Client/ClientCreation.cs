@@ -19,7 +19,8 @@ namespace DevOidc.Repositories.Operations.Client
 
         public Action<ClientEntity> Mutation => client =>
         {
-            client.ExtraClaims = JsonConvert.SerializeObject(_command.Client.ExtraClaims);
+            client.AccessTokenExtraClaims = JsonConvert.SerializeObject(_command.Client.AccessTokenExtraClaims);
+            client.IdTokenExtraClaims = JsonConvert.SerializeObject(_command.Client.IdTokenExtraClaims);
             client.RedirectUris = JsonConvert.SerializeObject(_command.Client.RedirectUris);
             client.Scopes = JsonConvert.SerializeObject(_command.Client.Scopes);
             client.Name = _command.Client.Name;

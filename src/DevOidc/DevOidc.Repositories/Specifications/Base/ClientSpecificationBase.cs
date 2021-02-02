@@ -10,7 +10,8 @@ namespace DevOidc.Repositories.Specifications.Base
     {
         public Func<ClientEntity, ClientDto> Projection => client => new ClientDto
         {
-            ExtraClaims = JsonConvert.DeserializeObject<Dictionary<string, string>>(client.ExtraClaims ?? "") ?? new Dictionary<string, string>(),
+            AccessTokenExtraClaims = JsonConvert.DeserializeObject<Dictionary<string, string>>(client.AccessTokenExtraClaims ?? "") ?? new Dictionary<string, string>(),
+            IdTokenExtraClaims = JsonConvert.DeserializeObject<Dictionary<string, string>>(client.IdTokenExtraClaims ?? "") ?? new Dictionary<string, string>(),
             Name = client.Name ?? "",
             ClientId = client.RowKey,
             TenantId = client.PartitionKey,

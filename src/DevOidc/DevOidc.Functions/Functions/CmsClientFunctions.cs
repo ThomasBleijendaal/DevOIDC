@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models;
 using DevOidc.Functions.Abstractions;
@@ -60,7 +61,7 @@ namespace DevOidc.Functions.Functions
             await GetValidUserAsync();
             var clients = await _clientManagementService.GetAllClientsAsync(tenantId);
 
-            return new OkObjectResult(clients);
+            return new OkObjectResult(clients.OrderBy(x => x.Name));
         }
 
         [FunctionName(nameof(UpdateClientAsync))]

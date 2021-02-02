@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models;
 using DevOidc.Functions.Abstractions;
@@ -16,15 +17,18 @@ namespace DevOidc.Functions.Functions
     public class CmsUserFunctions : BaseAdAuthenticatedFunctions
     {
         private readonly ITenantService _tenantService;
+        private readonly IUserService _userService;
         private readonly IUserManagementService _userManagementService;
 
         public CmsUserFunctions(
             IOptions<AzureAdConfig> options,
             IAuthenticationValidator authenticationValidator,
             ITenantService tenantService,
+            IUserService userService,
             IUserManagementService userManagementService) : base(options, authenticationValidator)
         {
             _tenantService = tenantService;
+            _userService = userService;
             _userManagementService = userManagementService;
         }
 
@@ -49,7 +53,7 @@ namespace DevOidc.Functions.Functions
             string userId)
         {
             await GetValidUserAsync();
-            var user = await _userManagementService.GetUserByIdAsync(tenantId, userId);
+            var user = await _userService.GetUserByIdAsync(tenantId, userId);
 
             return new OkObjectResult(user);
         }
@@ -62,7 +66,7 @@ namespace DevOidc.Functions.Functions
             await GetValidUserAsync();
             var users = await _userManagementService.GetAllUsersAsync(tenantId);
 
-            return new OkObjectResult(users);
+            return new OkObjectResult(users.OrderBy(x => x.FullName));
         }
 
         [FunctionName(nameof(UpdateUserAsync))]

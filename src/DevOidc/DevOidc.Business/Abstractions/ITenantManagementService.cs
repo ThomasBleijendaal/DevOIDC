@@ -10,5 +10,6 @@ namespace DevOidc.Business.Abstractions
         Task<IReadOnlyList<TenantDto>> GetTenantsOfOthersAsync(string ownerName);
         Task DeleteTenantAsync(string ownerName, string tenantId);
         Task<string> CreateTenantAsync(string ownerName, TenantDto tenant);
+        Task ClaimTenantAsync(string ownerName, string tenantId);
     }
 }

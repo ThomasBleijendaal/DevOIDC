@@ -36,6 +36,17 @@ namespace DevOidc.Repositories.Repositories
             creation.CreatedId = newId.ToString();
         }
 
+        public async Task ReinsertEntityAsync(IOperation<TEntity> operation)
+        {
+            var table = await GetTable().ConfigureAwait(false);
+
+            await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
+            {
+                await ReinsertEntity(operation, table, entity).ConfigureAwait(false);
+                break;
+            }
+        }
+
         public async Task DeleteEntitiesAsync(ISelection<TEntity> selection)
         {
             var table = await GetTable().ConfigureAwait(false);
@@ -52,7 +63,7 @@ namespace DevOidc.Repositories.Repositories
 
             await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
             {
-                await UpdateEnitty(operation, table, entity).ConfigureAwait(false);
+                await UpdateEntity(operation, table, entity).ConfigureAwait(false);
                 break;
             }
         }
@@ -63,17 +74,33 @@ namespace DevOidc.Repositories.Repositories
 
             await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
             {
-                await UpdateEnitty(operation, table, entity).ConfigureAwait(false);
+                await UpdateEntity(operation, table, entity).ConfigureAwait(false);
             }
         }
 
-        private static async Task UpdateEnitty(IOperation<TEntity> operation, TableClient table, TEntity entity)
+        private static async Task UpdateEntity(IOperation<TEntity> operation, TableClient table, TEntity entity)
         {
             operation.Mutation.Invoke(entity);
 
             try
             {
                 await table.UpdateEntityAsync(entity, entity.ETag, TableUpdateMode.Replace).ConfigureAwait(false);
+            }
+            catch (RequestFailedException)
+            {
+                throw new ConflictException();
+            }
+        }
+
+        private static async Task ReinsertEntity(IOperation<TEntity> operation, TableClient table, TEntity entity)
+        {
+            await table.DeleteEntityAsync(entity.PartitionKey, entity.RowKey, entity.ETag);
+
+            operation.Mutation.Invoke(entity);
+
+            try
+            {
+                await table.AddEntityAsync(entity).ConfigureAwait(false);
             }
             catch (RequestFailedException)
             {

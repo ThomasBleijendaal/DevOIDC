@@ -4,7 +4,8 @@
     {
         public string? Name { get; set; }
         public string? Scopes { get; set; }
-        public string? ExtraClaims { get; set; }
+        public string? AccessTokenExtraClaims { get; set; }
+        public string? IdTokenExtraClaims { get; set; }
         public string? RedirectUris { get; set; }
     }
 }

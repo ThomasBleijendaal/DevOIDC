@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models;
 using DevOidc.Functions.Abstractions;
@@ -42,6 +43,18 @@ namespace DevOidc.Functions.Functions
             return new OkObjectResult(tenantId);
         }
 
+        [FunctionName(nameof(ClaimTenantAsync))]
+        public async Task<IActionResult> ClaimTenantAsync(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "cms/tenant/claim/{tenantId}")] HttpRequest req,
+            string tenantId)
+        {
+            var user = await GetValidUserAsync();
+
+            await _tenantManagementService.ClaimTenantAsync(user.Identity?.Name ?? "-unknown-", tenantId);
+
+            return new OkResult();
+        }
+
         [FunctionName(nameof(DeleteTenantAsync))]
         public async Task<IActionResult> DeleteTenantAsync(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "cms/tenant/{tenantId}")] HttpRequest req,
@@ -71,7 +84,7 @@ namespace DevOidc.Functions.Functions
             var user = await GetValidUserAsync();
             var tenants = await _tenantManagementService.GetTenantsAsync(user.Identity?.Name ?? "-unknown-");
 
-            return new OkObjectResult(tenants);
+            return new OkObjectResult(tenants.OrderBy(x => x.Name));
         }
 
         [FunctionName(nameof(GetOtherTenantsAsync))]

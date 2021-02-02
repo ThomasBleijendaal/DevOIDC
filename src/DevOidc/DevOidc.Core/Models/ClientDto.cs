@@ -9,6 +9,7 @@ namespace DevOidc.Core.Models
         public string Name { get; set; } = default!;
         public List<string> RedirectUris { get; set; } = default!;
         public List<ScopeDto> Scopes { get; set; } = default!;
-        public Dictionary<string, string> ExtraClaims { get; set; } = default!;
+        public Dictionary<string, string> AccessTokenExtraClaims { get; set; } = default!;
+        public Dictionary<string, string> IdTokenExtraClaims { get; set; } = default!;
     }
 }

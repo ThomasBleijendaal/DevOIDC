@@ -47,6 +47,7 @@ namespace DevOidc.Functions
 
             builder.Services.AddTransient<ISessionService, TableStorageSessionService>();
             builder.Services.AddTransient<ITenantService, TenantService>();
+            builder.Services.AddTransient<IUserService, UserService>();
 
             builder.Services.AddTransient<IClientManagementService, ClientManagementService>();
             builder.Services.AddTransient<ITenantManagementService, TenantManagementService>();
@@ -54,6 +55,7 @@ namespace DevOidc.Functions
 
             builder.Services.AddTransient<ICommandHandler<CreateSessionCommand>, CreateSessionCommandHandler>();
             builder.Services.AddTransient<ICommandHandler<CreateTenantCommand>, CreateTenantCommandHandler>();
+            builder.Services.AddTransient<ICommandHandler<ClaimTenantCommand>, ClaimTenantCommandHandler>();
             builder.Services.AddTransient<ICommandHandler<DeleteSessionCommand>, DeleteSessionCommandHandler>();
             builder.Services.AddTransient<ICommandHandler<DeleteTenantCommand>, DeleteTenantCommandHandler>();
 

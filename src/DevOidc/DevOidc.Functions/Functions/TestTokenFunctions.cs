@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
 using DevOidc.Functions.Abstractions;
 using Microsoft.AspNetCore.Http;
@@ -13,13 +15,21 @@ using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Functions
 {
+    // TODO: test with cors
     public class TestTokenFunctions
     {
         private readonly IAuthenticationValidator _authenticationValidator;
+        private readonly IUserService _userService;
+        private readonly IClaimsProvider _claimsProvider;
 
-        public TestTokenFunctions(IAuthenticationValidator authenticationValidator)
+        public TestTokenFunctions(
+            IAuthenticationValidator authenticationValidator,
+            IUserService userService,
+            IClaimsProvider claimsProvider)
         {
             _authenticationValidator = authenticationValidator;
+            _userService = userService;
+            _claimsProvider = claimsProvider;
         }
 
         [FunctionName(nameof(TestOidcTokenAsync))]
@@ -53,11 +63,17 @@ namespace DevOidc.Functions.Functions
             try
             {
                 var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
-                var user = await _authenticationValidator.GetClaimsAysnc(instance);
+                var principal = await _authenticationValidator.GetClaimsAysnc(instance);
 
-                // TODO: tenant configuration to add more stuff to this user info
+                var user = await _userService.GetUserByIdAsync(tenantId, principal.Claims.First(x => x.Type == "sub").Value);
+                if (user == null)
+                {
+                    return new HttpResponseMessage(HttpStatusCode.Forbidden);
+                }
 
-                return ClaimsAsJson(user);
+                var claims = _claimsProvider.CreateUserInfoClaims(user);
+
+                return ClaimsAsJson(claims);
             }
             catch (Exception ex)
             {
@@ -71,6 +87,16 @@ namespace DevOidc.Functions.Functions
         private static HttpResponseMessage ClaimsAsJson(System.Security.Claims.ClaimsPrincipal user)
         {
             var json = JsonConvert.SerializeObject(user.Claims.ToDictionary(x => x.Type, x => x.Value));
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            };
+        }
+
+        private static HttpResponseMessage ClaimsAsJson(IReadOnlyDictionary<string, object> claims)
+        {
+            var json = JsonConvert.SerializeObject(claims);
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {

@@ -7,5 +7,6 @@ namespace DevOidc.Business.Abstractions
     {
         Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, ScopeDto scope);
         Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope, string? nonce);
+        Dictionary<string, object> CreateUserInfoClaims(UserDto user);
     }
 }

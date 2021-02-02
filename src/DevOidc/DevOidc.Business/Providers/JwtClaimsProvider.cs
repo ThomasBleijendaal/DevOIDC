@@ -29,8 +29,8 @@ namespace DevOidc.Business.Providers
                 { "__dev-oidc-token_type", "access-token" }
             };
 
-            AddClaims(client.ExtraClaims, dict);
-            AddClaims(user.ExtraClaims, dict);
+            AddClaims(client.AccessTokenExtraClaims, dict);
+            AddClaims(user.AccessTokenExtraClaims, dict);
 
             return dict;
         }
@@ -52,6 +52,24 @@ namespace DevOidc.Business.Providers
             {
                 dict.Add("nonce", nonce!);
             }
+
+            AddClaims(client.IdTokenExtraClaims, dict);
+            AddClaims(user.IdTokenExtraClaims, dict);
+
+            return dict;
+        }
+
+        public Dictionary<string, object> CreateUserInfoClaims(UserDto user)
+        {
+            var dict = new Dictionary<string, object>
+            {
+                { "sub", user.UserId },
+                { "name", user.FullName },
+                { "__dev-oidc-token_type", "user-info-token" }
+            };
+
+            AddClaims(user.IdTokenExtraClaims, dict);
+            AddClaims(user.UserInfoExtraClaims, dict);
 
             return dict;
         }

@@ -11,11 +11,11 @@ using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RapidCMS.Core.Abstractions.Setup;
+using RapidCMS.Core.Authorization;
 using RapidCMS.Core.Enums;
 using RapidCMS.UI.Components.Buttons;
-using Microsoft.Extensions.Logging;
-using DevOidc.Core.Models;
 
 namespace DevOidc.Cms
 {
@@ -39,6 +39,7 @@ namespace DevOidc.Cms
                     var provider = sp.GetRequiredService<IAccessTokenProvider>();
                     var manager = sp.GetRequiredService<NavigationManager>();
 
+                    // TODO: update
                     // this forwards the bearer token to the api
                     return new TokenAuthorizationMessageHandler(provider, manager, builder.Configuration["Uris:Api"]);
                 });
@@ -51,11 +52,12 @@ namespace DevOidc.Cms
                 options.ProviderOptions.LoginMode = "redirect";
             });
 
-            builder.Services.AddSingleton<ClientRepository>();
-            builder.Services.AddSingleton<TenantRepository>();
-            builder.Services.AddSingleton<UserRepository>();
+            builder.Services.AddScoped<ClientRepository>();
+            builder.Services.AddScoped<TenantRepository>();
+            builder.Services.AddScoped<UserRepository>();
 
-            builder.Services.AddSingleton<ResetPasswordButtonHandler>();
+            builder.Services.AddScoped<ClaimTenantButtonHandler>();
+            builder.Services.AddScoped<ResetPasswordButtonHandler>();
 
             builder.Services.AddRapidCMSWebAssembly(config =>
             {
@@ -95,6 +97,7 @@ namespace DevOidc.Cms
                         x.AddDefaultButton(DefaultButtonType.Return);
                         x.AddDefaultButton(DefaultButtonType.Up);
                         x.AddDefaultButton(DefaultButtonType.SaveNew, isPrimary: true);
+                        x.AddCustomButton<ClaimTenantButtonHandler>(typeof(DefaultButton), "Take ownership of tenant", "Crown");
                         x.AddDefaultButton(DefaultButtonType.Delete);
 
                         x.AddSection(section =>
@@ -154,7 +157,9 @@ namespace DevOidc.Cms
                                 section.AddField(x => x.FullName).SetName("Full name");
                                 section.AddField(x => x.UserName).SetName("User name");
                                 section.AddField(x => x.Password).DisableWhen((m, e) => true);
-                                section.AddField(x => x.ExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims").SetDescription("In JWT token");
+                                section.AddField(x => x.AccessTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in Access Token");
+                                section.AddField(x => x.IdTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in ID Token");
+                                section.AddField(x => x.UserInfoExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in OIDC UserInfo");
                             });
 
                             x.AddSection(section =>
@@ -209,7 +214,8 @@ namespace DevOidc.Cms
                             {
                                 section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre);
                                 section.AddField(x => x.Name);
-                                section.AddField(x => x.ExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims").SetDescription("In JWT token");
+                                section.AddField(x => x.AccessTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in Access Token");
+                                section.AddField(x => x.IdTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in ID Token");
                                 section.AddField(x => x.Scopes).SetType(typeof(ScopeEditor)).SetName("Allowed scopes");
                             });
 

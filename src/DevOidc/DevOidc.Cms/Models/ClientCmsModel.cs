@@ -12,8 +12,8 @@ namespace DevOidc.Cms.Models
     [IgnoreInTarget(nameof(ClientDto.TenantId))]
     public class ClientCmsModel : IEntity
     {
-        [MapWith(nameof(ClientDto.ClientId))]
-        public string Id { get; set; } = "";
+        [MapWith(nameof(ClientDto.ClientId), IgnoreNullIncompatibility = true)]
+        public string? Id { get; set; } = "";
 
         [Display(ShortName = "Name", Name = "Name", Order = 0)]
         [Required]
@@ -25,8 +25,12 @@ namespace DevOidc.Cms.Models
         [Required]
         public List<ScopeDto> Scopes { get; set; } = new List<ScopeDto>();
 
-        [Display(ShortName = "Extra claims", Name = "Extra claims", ResourceType = typeof(ClaimEditor), Order = 0)]
+        [Display(ShortName = "Extra claims (access token)", Name = "Extra claims (access token)", ResourceType = typeof(ClaimEditor), Order = 0)]
         [Required]
-        public Dictionary<string, string> ExtraClaims { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> AccessTokenExtraClaims { get; set; } = new Dictionary<string, string>();
+
+        [Display(ShortName = "Extra claims (id token)", Name = "Extra claims (id token)", ResourceType = typeof(ClaimEditor), Order = 0)]
+        [Required]
+        public Dictionary<string, string> IdTokenExtraClaims { get; set; } = new Dictionary<string, string>();
     }
 }

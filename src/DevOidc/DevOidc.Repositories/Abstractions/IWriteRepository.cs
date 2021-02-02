@@ -7,6 +7,7 @@ namespace DevOidc.Repositories.Abstractions
         where TEntity : class, ITableEntity, new()
     {
         Task CreateEntityAsync(ICreation<TEntity> creation);
+        Task ReinsertEntityAsync(IOperation<TEntity> operation);
         Task UpdateSingleEntityAsync(IOperation<TEntity> operation);
         Task UpdateMultipleEntitiesAsync(IOperation<TEntity> operation);
         Task DeleteEntitiesAsync(ISelection<TEntity> selection);

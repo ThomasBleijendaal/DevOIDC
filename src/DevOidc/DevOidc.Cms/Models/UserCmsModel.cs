@@ -10,8 +10,8 @@ namespace DevOidc.Cms.Models
     [MapTo(typeof(UserDto))]
     public class UserCmsModel : IEntity
     {
-        [MapWith(nameof(UserDto.UserId))]
-        public string Id { get; set; } = "";
+        [MapWith(nameof(UserDto.UserId), IgnoreNullIncompatibility = true)]
+        public string? Id { get; set; } = "";
 
         [Required]
         [EmailAddress]
@@ -23,7 +23,13 @@ namespace DevOidc.Cms.Models
         public string Password { get; set; } = "";
 
         [Required]
-        public Dictionary<string, string> ExtraClaims { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> AccessTokenExtraClaims { get; set; } = new Dictionary<string, string>();
+
+        [Required]
+        public Dictionary<string, string> IdTokenExtraClaims { get; set; } = new Dictionary<string, string>();
+
+        [Required]
+        public Dictionary<string, string> UserInfoExtraClaims { get; set; } = new Dictionary<string, string>();
 
         public List<string> Clients { get; set; } = new List<string>();
 

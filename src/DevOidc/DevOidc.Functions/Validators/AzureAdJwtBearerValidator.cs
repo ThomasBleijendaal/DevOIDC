@@ -77,7 +77,6 @@ namespace DevOidc.Functions.Validators
 
                 var tokenValidator = new JwtSecurityTokenHandler
                 {
-                    // TODO: tenant configuration
                     MapInboundClaims = instanceUri.AbsoluteUri.Contains("microsoft")
                 };
 

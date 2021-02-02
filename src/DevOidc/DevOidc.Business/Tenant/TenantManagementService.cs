@@ -20,15 +20,18 @@ namespace DevOidc.Business.Tenant
         private readonly IReadRepository<TenantEntity> _readRepository;
         private readonly ICommandHandler<CreateTenantCommand> _createTenantCommandHandler;
         private readonly ICommandHandler<DeleteTenantCommand> _deleteTenantCommandHandler;
+        private readonly ICommandHandler<ClaimTenantCommand> _claimTenantCommandHandler;
 
         public TenantManagementService(
             IReadRepository<TenantEntity> readRepository,
             ICommandHandler<CreateTenantCommand> createTenantCommandHandler,
-            ICommandHandler<DeleteTenantCommand> deleteTenantCommandHandler)
+            ICommandHandler<DeleteTenantCommand> deleteTenantCommandHandler,
+            ICommandHandler<ClaimTenantCommand> claimTenantCommandHandler)
         {
             _readRepository = readRepository;
             _createTenantCommandHandler = createTenantCommandHandler;
             _deleteTenantCommandHandler = deleteTenantCommandHandler;
+            _claimTenantCommandHandler = claimTenantCommandHandler;
         }
 
         public async Task<string> CreateTenantAsync(string ownerName, TenantDto tenant)
@@ -47,10 +50,11 @@ namespace DevOidc.Business.Tenant
         public async Task<IReadOnlyList<TenantDto>> GetTenantsOfOthersAsync(string ownerName)
             => await _readRepository.GetListAsync(new GetAllOtherTenantsSpecification(ownerName));
 
-        public async Task DeleteTenantAsync(string ownerName, string tenantId)
-        {
-            await _deleteTenantCommandHandler.HandleAsync(new DeleteTenantCommand(ownerName, tenantId));
-        }
+        public async Task DeleteTenantAsync(string ownerName, string tenantId) 
+            => await _deleteTenantCommandHandler.HandleAsync(new DeleteTenantCommand(ownerName, tenantId));
+
+        public async Task ClaimTenantAsync(string ownerName, string tenantId) 
+            => await _claimTenantCommandHandler.HandleAsync(new ClaimTenantCommand(ownerName, tenantId));
 
         private static string GetStringFromKey(AsymmetricKeyParameter param)
         {
