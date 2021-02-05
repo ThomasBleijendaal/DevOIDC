@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DevOidc.Cms.Components.Editors;
 using DevOidc.Cms.Components.Login;
 using DevOidc.Cms.Components.Panes;
+using DevOidc.Cms.Components.Sections;
 using DevOidc.Cms.Handlers;
 using DevOidc.Cms.Models;
 using DevOidc.Cms.Repositories;
@@ -39,9 +40,10 @@ namespace DevOidc.Cms
                     var provider = sp.GetRequiredService<IAccessTokenProvider>();
                     var manager = sp.GetRequiredService<NavigationManager>();
 
-                    // TODO: update
                     // this forwards the bearer token to the api
-                    return new TokenAuthorizationMessageHandler(provider, manager, builder.Configuration["Uris:Api"]);
+                    var handler = new AuthorizationMessageHandler(provider, manager);
+                    handler.ConfigureHandler(new[] { builder.Configuration["Uris:Api"] });
+                    return handler;
                 });
 
             builder.Services.AddMsalAuthentication(options =>
@@ -67,6 +69,7 @@ namespace DevOidc.Cms
                 config.SetCustomLoginScreen(typeof(LoginScreen));
 
                 config.Dashboard.AddSection("tenant");
+                config.Dashboard.AddSection(typeof(OidcHelp));
 
                 config.AddCollection<TenantCmsModel, TenantRepository>("tenant", "Tenants", config =>
                 {
@@ -104,6 +107,7 @@ namespace DevOidc.Cms
                         {
                             section.AddField(x => x.Id).SetName("Tenant Id").SetType(DisplayType.Pre);
                             section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
+                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}/.well-known/openid-configuration").SetType(DisplayType.Pre).SetName("Metadata endpoint");
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.TokenLifetime.TotalSeconds).SetName("Token lifetime").SetDescription("In seconds").SetType(DisplayType.Label);

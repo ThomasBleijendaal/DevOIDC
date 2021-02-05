@@ -1,0 +1,43 @@
+﻿@inherits BaseSection
+
+    <div class="content">
+        <h3>OIDC</h3>
+
+        <p>DevOIDC is a best-effort OIDC server which allows developers to easily implement OIDC authentication flows. Applications
+            which require authentication can be added as a <strong>client</strong>. Users can be given permission to access a client,
+            which allows them to sign in and use the application.</p>
+
+        <p>When an application requires a user to sign in, the user is send to a generic sign-in page of the OIDC server. After completing
+            the sign in, the user is send back to the <strong>reply url</strong> configured in the client. This reply url receives information
+            from the OIDC server to retrieve an <strong>ID token</strong>. This ID token is a JWT which contains a set of <strong>claims</strong>, describing the
+            user.</p>
+
+        <p>When an application want to use an API which requires authentication, the application can add certain <strong>scopes</strong> to the
+            sign in challenge, which result in an <strong>Access token</strong>. This Access token will contain a certain <strong>Audience claim</strong>
+            which corresponds to the requested scope. The API can validate whether the given Access token is made for a certain Audience, indicating that
+            the user is allowed to use that API.</p>
+
+        <p>To use this DevOIDC, a <strong>tenant</strong> must first be created, which can be viewed as a silo for a set of users and clients. To this tenant,
+            <strong>clients</strong> can be added which have <strong>reply urls</strong> based on their deployment location and platform type. These clients also
+            have a set of <strong>scopes</strong> defined, which indicate for which <strong>audiences</strong> access tokens can be generated. A <strong>user</strong>
+            can be given access to a certain client, which in term gives them access to the set of scopes. There are a few corners cut in DevOIDC to make development
+            and configuration easy:</p>
+
+        <ul>
+            <li>User passwords are unencrypted and fixed. This makes sharing accounts easy, but the system totally insecure.</li>
+            <li>Token lifetimes is 5 minutes. Each ID and Access token will expire after 5 minutes.</li>
+            <li>Refresh tokens lifetime is infinite. Each session can be easily resumed albeit only once, and since they are unprotected in the database,
+                easily taken over.</li>
+            <li>All users which have access to a client, will have full access to all the scopes the client has access to. There is no
+                fine grained access control on client level.</li>
+            <li>Tenant JWT signature keys will not rotate.</li>
+            <li>To each user and client any JWT claim can be added.</li>
+            <li>Any url can be configured as reply url for a client.</li>
+        </ul>
+
+        <p><strong>Metadata endpoint</strong></p>
+        <pre>https://devoidc.azurewebsites.net/{tenant-id}/.well-known/openid-configuration</pre>
+
+
+
+    </div>
