@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
-using DevOidc.Functions.Models;
+using DevOidc.Functions.Authentication;
 using Microsoft.Extensions.Options;
 
 namespace DevOidc.Functions.Functions.Base

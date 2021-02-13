@@ -5,9 +5,8 @@ using DevOidc.Business.Providers;
 using DevOidc.Business.Scopes;
 using DevOidc.Business.Session;
 using DevOidc.Business.Tenant;
-using DevOidc.Functions;
 using DevOidc.Functions.Abstractions;
-using DevOidc.Functions.Models;
+using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Validators;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Commands.Client;
@@ -19,59 +18,76 @@ using DevOidc.Repositories.Handlers.Session;
 using DevOidc.Repositories.Handlers.Tenant;
 using DevOidc.Repositories.Handlers.User;
 using DevOidc.Repositories.Repositories;
-using Microsoft.Azure.Functions.Extensions.DependencyInjection;
+using Microsoft.Azure.Functions.Worker.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-[assembly: FunctionsStartup(typeof(Startup))]
 namespace DevOidc.Functions
 {
-    public class Startup : FunctionsStartup
+    public class Startup
     {
         // TODO: convert to .NET 5.0 function app
-
-        public override void Configure(IFunctionsHostBuilder builder)
+        public Startup(IConfiguration configuration)
         {
-            var config = builder.GetContext().Configuration;
+            Configuration = configuration;
+        }
 
-            builder.Services.AddMemoryCache();
+        public IConfiguration Configuration { get; }
 
-            builder.Services.AddTransient<IJwtProvider, RS256JwtProvider>();
-            builder.Services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
-            builder.Services.AddTransient<IScopeProvider, ScopeProvider>();
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMemoryCache();
 
-            var tableCredentials = new TableSharedKeyCredential(config["Table:AccountName"], config["Table:AccountKey"]);
+            services.AddTransient<IJwtProvider, RS256JwtProvider>();
+            services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
+            services.AddTransient<IScopeProvider, ScopeProvider>();
 
-            builder.Services.AddSingleton(tableCredentials);
-            builder.Services.AddSingleton(new TableServiceClient(new Uri(config["Table:Uri"]), tableCredentials));
+            var tableCredentials = new TableSharedKeyCredential(Configuration["Table:AccountName"], Configuration["Table:AccountKey"]);
 
-            builder.Services.AddTransient(typeof(IWriteRepository<>), typeof(WriteRepository<>));
-            builder.Services.AddTransient(typeof(IReadRepository<>), typeof(ReadRepository<>));
+            services.AddSingleton(tableCredentials);
+            services.AddSingleton(new TableServiceClient(new Uri(Configuration["Table:Uri"]), tableCredentials));
 
-            builder.Services.AddTransient<ISessionService, TableStorageSessionService>();
-            builder.Services.AddTransient<ITenantService, TenantService>();
-            builder.Services.AddTransient<IUserService, UserService>();
+            services.AddTransient(typeof(IWriteRepository<>), typeof(WriteRepository<>));
+            services.AddTransient(typeof(IReadRepository<>), typeof(ReadRepository<>));
 
-            builder.Services.AddTransient<IClientManagementService, ClientManagementService>();
-            builder.Services.AddTransient<ITenantManagementService, TenantManagementService>();
-            builder.Services.AddTransient<IUserManagementService, UserManagementService>();
+            services.AddTransient<ISessionService, TableStorageSessionService>();
+            services.AddTransient<ITenantService, TenantService>();
+            services.AddTransient<IUserService, UserService>();
 
-            builder.Services.AddTransient<ICommandHandler<CreateSessionCommand>, CreateSessionCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<CreateTenantCommand>, CreateTenantCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<ClaimTenantCommand>, ClaimTenantCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<DeleteSessionCommand>, DeleteSessionCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<DeleteTenantCommand>, DeleteTenantCommandHandler>();
+            services.AddTransient<IClientManagementService, ClientManagementService>();
+            services.AddTransient<ITenantManagementService, TenantManagementService>();
+            services.AddTransient<IUserManagementService, UserManagementService>();
 
-            builder.Services.AddTransient<ICommandHandler<CreateUserCommand>, CreateUserCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<UpdateUserCommand>, UpdateUserCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<DeleteUserCommand>, DeleteUserCommandHandler>();
+            services.AddTransient<ICommandHandler<CreateSessionCommand>, CreateSessionCommandHandler>();
+            services.AddTransient<ICommandHandler<CreateTenantCommand>, CreateTenantCommandHandler>();
+            services.AddTransient<ICommandHandler<ClaimTenantCommand>, ClaimTenantCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteSessionCommand>, DeleteSessionCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteTenantCommand>, DeleteTenantCommandHandler>();
 
-            builder.Services.AddTransient<ICommandHandler<CreateClientCommand>, CreateClientCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<UpdateClientCommand>, UpdateClientCommandHandler>();
-            builder.Services.AddTransient<ICommandHandler<DeleteClientCommand>, DeleteClientCommandHandler>();
+            services.AddTransient<ICommandHandler<CreateUserCommand>, CreateUserCommandHandler>();
+            services.AddTransient<ICommandHandler<UpdateUserCommand>, UpdateUserCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteUserCommand>, DeleteUserCommandHandler>();
 
-            builder.Services.AddHttpContextAccessor();
-            builder.Services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();
-            builder.Services.AddOptions<AzureAdConfig>().Bind(config.GetSection("AzureAd"));
+            services.AddTransient<ICommandHandler<CreateClientCommand>, CreateClientCommandHandler>();
+            services.AddTransient<ICommandHandler<UpdateClientCommand>, UpdateClientCommandHandler>();
+            services.AddTransient<ICommandHandler<DeleteClientCommand>, DeleteClientCommandHandler>();
+
+            services.AddHttpContextAccessor();
+            services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();
+            services.AddOptions<AzureAdConfig>().Bind(Configuration.GetSection("AzureAd"));
+
+            // TODO: why is Core + Api.Core not automatically included?
+            services.AddRapidCMSFunctions(config =>
+            {
+
+            });
+        }
+
+        public void ConfigureWorker(IFunctionsWorkerApplicationBuilder builder)
+        {
+            builder.UseAuthorization();
+
+            builder.UseFunctionExecutionMiddleware();
         }
     }
 }

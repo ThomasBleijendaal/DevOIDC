@@ -1,11 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Extensions;
 using DevOidc.Functions.Models.Response;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
+using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Functions
 {
@@ -18,46 +20,64 @@ namespace DevOidc.Functions.Functions
             _tenantService = tenantService;
         }
 
-        [FunctionName(nameof(GetMetadata))]
-        public IActionResult GetMetadata(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/.well-known/openid-configuration")] HttpRequest req,
-            string tenantId)
+        [FunctionName(nameof(GetMetadataAsync))]
+        public async Task<HttpResponseData> GetMetadataAsync(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/.well-known/openid-configuration")] HttpRequestData req, FunctionExecutionContext context)
         {
-            return new OkObjectResult(new MetadataResponseModel
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
             {
-                TokenEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/token",
+                return new HttpResponseData(HttpStatusCode.BadRequest);
+            }
+
+            var tenant = await _tenantService.GetTenantAsync(tenantId);
+            if (tenant == null)
+            {
+                return new HttpResponseData(HttpStatusCode.NotFound);
+            }
+
+            var baseUri = GetBaseUri(context, ".well-known");
+
+            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(new MetadataResponseModel
+            {
+                TokenEndpoint = $"{baseUri}{tenantId}/token",
                 TokenEndpointAuthMethodsSupported = new[] { "client_secret_post", "private_key_jwt", "client_secret_basic" },
-                JwksUri = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/discovery/keys",
-                ResponseModesSupported = new[] { "fragment", "form_post", "query"},
+                JwksUri = $"{baseUri}{tenantId}/discovery/keys",
+                ResponseModesSupported = new[] { "fragment", "form_post", "query" },
                 SubjectTypesSupported = new[] { "pairwise" },
                 IdTokenSigningAlgValuesSupported = new[] { "RS256" },
                 ResponseTypesSupported = new[] { "code", "id_token", "code id_token", "token id_token", "token" },
                 ScopesSupported = new[] { "openid" },
-                Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}",
-                AuthorizationEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/authorize",
+                Issuer = $"{baseUri}{tenantId}",
+                AuthorizationEndpoint = $"{baseUri}{tenantId}/authorize",
                 ClaimsSupported = new[] { "sub", "iss", "aud", "exp", "email" },
                 TenantRegionScope = "EU",
-                EndSessionEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/logout",
+                EndSessionEndpoint = $"{baseUri}{tenantId}/logout",
                 HttpLogoutSupported = true,
-                CheckSessionIframe = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/checksession",
-                UserinfoEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/oidc/userinfo",
-            });
+                CheckSessionIframe = $"{baseUri}{tenantId}/checksession",
+                UserinfoEndpoint = $"{baseUri}{tenantId}/oidc/userinfo",
+            }));
         }
 
         [FunctionName(nameof(GetKeysAsync))]
-        public async Task<IActionResult> GetKeysAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequest req,
-            string tenantId)
+        public async Task<HttpResponseData> GetKeysAsync(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequestData req, FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return new HttpResponseData(HttpStatusCode.BadRequest);
+            }
+
+            var baseUri = GetBaseUri(context, "/discovery/keys");
+
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenantId);
             if (encryptionProvider == null)
             {
-                return new NotFoundResult();
+                return new HttpResponseData(HttpStatusCode.NotFound);
             }
 
             var key = encryptionProvider.GetPublicKey();
 
-            return new OkObjectResult(new KeysResponseModel
+            return new HttpResponseData(HttpStatusCode.OK, JsonConvert.SerializeObject(new KeysResponseModel
             {
                 Keys = new[]
                 {
@@ -69,10 +89,17 @@ namespace DevOidc.Functions.Functions
                         Kid = key.Id,
                         N = key.Modulus,
                         E = key.Exponent,
-                        Issuer = $"{req.HttpContext.GetServerBaseUri()}{tenantId}"
+                        Issuer = baseUri
                     }
                 }
-            });
+            }));
+        }
+
+        private static string GetBaseUri(FunctionExecutionContext context, string readTo)
+        {
+            var requestUri = new Uri(context.InvocationRequest.TriggerMetadata["req"].Http.Url);
+            var baseUri = requestUri.ToString().Split(readTo)[0];
+            return baseUri;
         }
     }
 }
