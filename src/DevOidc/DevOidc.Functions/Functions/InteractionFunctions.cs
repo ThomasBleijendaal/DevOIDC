@@ -17,7 +17,6 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: test the audience pattern indicated by Auth0 (using the token events to add an audience and not a scope)
     public class InteractionFunctions
     {
         private readonly ITenantService _tenantService;

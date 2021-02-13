@@ -15,7 +15,6 @@ using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: test with cors
     public class TestTokenFunctions
     {
         private readonly IAuthenticationValidator _authenticationValidator;

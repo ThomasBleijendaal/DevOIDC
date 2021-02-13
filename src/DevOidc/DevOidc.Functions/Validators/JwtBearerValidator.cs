@@ -92,14 +92,7 @@ namespace DevOidc.Functions.Validators
                     ValidIssuer = $"{validIssuer ?? instanceUri}"
                 };
 
-                var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
-                // TODO: this is redundent
-                if (IsClaimValid("aud", scope, claimsPrincipal))
-                {
-                    return claimsPrincipal;
-                }
-
-                throw new UnauthorizedAccessException();
+                return tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
             }
             catch (Exception ex) when (ex is not UnauthorizedAccessException)
             {
@@ -134,20 +127,6 @@ namespace DevOidc.Functions.Validators
 
             var accessToken = authorizationHeader["Bearer ".Length..];
             return accessToken;
-        }
-
-        private bool IsClaimValid(string claimName, string requiredClaimValue, ClaimsPrincipal claimsPrincipal)
-        {
-            if (claimsPrincipal == null)
-            {
-                return false;
-            }
-
-            var claim = claimsPrincipal.HasClaim(x => x.Type == claimName)
-                ? claimsPrincipal.Claims.First(x => x.Type == claimName).Value
-                : string.Empty;
-
-            return requiredClaimValue == claim;
         }
     }
 }

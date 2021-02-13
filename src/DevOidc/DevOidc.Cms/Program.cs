@@ -21,7 +21,6 @@ namespace DevOidc.Cms
 {
     public class Program
     {
-        // TODO: update to 3.8.x
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -114,7 +113,8 @@ namespace DevOidc.Cms
 
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
-                            section.AddField(x => x.TokenLifetime.TotalSeconds).SetName("Token lifetime").SetDescription("In seconds").SetType(DisplayType.Label);
+                            section.AddField(x => x.TokenLifetimeSeconds).DisableWhen((m, s) => s == EntityState.IsExisting)
+                                .SetName("Token lifetime").SetDescription("In seconds").SetType(EditorType.Numeric);
                         });
 
                         x.AddSection(section =>

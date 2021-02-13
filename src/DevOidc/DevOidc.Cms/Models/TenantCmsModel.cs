@@ -1,6 +1,7 @@
 ﻿using System;
 using DevOidc.Core.Models;
 using GeneratedMapper.Attributes;
+using Newtonsoft.Json;
 using RapidCMS.Core.Abstractions.Data;
 
 namespace DevOidc.Cms.Models
@@ -14,5 +15,12 @@ namespace DevOidc.Cms.Models
         public string? OwnerName { get; set; }
         public string? Description { get; set; }
         public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromMinutes(5);
+
+        [Ignore]
+        [JsonIgnore]
+        public int TokenLifetimeSeconds {
+            get => (int)TokenLifetime.TotalSeconds;
+            set => TokenLifetime = TimeSpan.FromSeconds(value);
+        }
     }
 }

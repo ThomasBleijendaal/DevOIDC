@@ -10,7 +10,6 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: test CORS for SPA / Web
     // TODO: test nonce for refesh tokens
     public class TokenFunctions
     {

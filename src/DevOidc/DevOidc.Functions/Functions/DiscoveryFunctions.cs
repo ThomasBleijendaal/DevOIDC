@@ -9,7 +9,6 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: CORS on these endpoints
     public class DiscoveryFunctions
     {
         private readonly ITenantService _tenantService;
