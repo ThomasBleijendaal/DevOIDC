@@ -25,7 +25,8 @@ namespace DevOidc.Repositories.Specifications.Session
             ScopeId = session.ScopeId ?? "",
             TenantId = session.PartitionKey,
             UserId = session.UserId ?? "",
-            RequestedScopes = JsonConvert.DeserializeObject<List<string>>(session.RequestedScopes ?? "[]") ?? new List<string>()
+            RequestedScopes = JsonConvert.DeserializeObject<List<string>>(session.RequestedScopes ?? "[]") ?? new List<string>(),
+            Audience = session.Audience
         };
 
         public Expression<Func<SessionEntity, bool>> Criteria => session => session.PartitionKey == _tenantId && session.RowKey == _sessionId;

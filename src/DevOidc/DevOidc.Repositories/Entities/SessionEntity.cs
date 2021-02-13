@@ -6,5 +6,6 @@
         public string? ClientId { get; set; }
         public string? ScopeId { get; set; }
         public string? RequestedScopes { get; set; }
+        public string? Audience { get; set; }
     }
 }

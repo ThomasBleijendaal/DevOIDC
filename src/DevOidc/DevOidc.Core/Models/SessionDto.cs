@@ -9,6 +9,7 @@ namespace DevOidc.Core.Models
         public UserDto User { get; set; } = default!;
         public TenantDto Tenant { get; set; } = default!;
         public ClientDto Client { get; set; } = default!;
-        public ScopeDto Scope { get; set; } = default!;
+        public string ScopeId { get; set; } = default!;
+        public string? Audience { get; set; } = default!;
     }
 }

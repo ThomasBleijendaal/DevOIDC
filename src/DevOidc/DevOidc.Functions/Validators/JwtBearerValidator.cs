@@ -13,14 +13,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace DevOidc.Functions.Validators
 {
-    internal class AzureAdJwtBearerValidator : IAuthenticationValidator
+    internal class JwtBearerValidator : IAuthenticationValidator
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly ILogger<AzureAdJwtBearerValidator> _logger;
+        private readonly ILogger<JwtBearerValidator> _logger;
 
-        public AzureAdJwtBearerValidator(
+        public JwtBearerValidator(
             IHttpContextAccessor httpContextAccessor,
-            ILogger<AzureAdJwtBearerValidator> logger)
+            ILogger<JwtBearerValidator> logger)
         {
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
@@ -93,6 +93,7 @@ namespace DevOidc.Functions.Validators
                 };
 
                 var claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out var securityToken);
+                // TODO: this is redundent
                 if (IsClaimValid("aud", scope, claimsPrincipal))
                 {
                     return claimsPrincipal;

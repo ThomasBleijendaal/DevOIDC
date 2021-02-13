@@ -17,6 +17,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
+    // TODO: test the audience pattern indicated by Auth0 (using the token events to add an audience and not a scope)
     public class InteractionFunctions
     {
         private readonly ITenantService _tenantService;
@@ -82,13 +83,14 @@ namespace DevOidc.Functions.Functions
             {
                 message = FormView.Error($"Client <code>{requestModel.ClientId}</code> only supports <code>response_type=form_post</code> or <code>response_type=fragment</code> or <code>response_type=query</code>.");
             }
-            
+
             body = FormView.RenderForm(
                 new Dictionary<string, string?>
                 {
                     { "client_id", requestModel.ClientId },
                     { "redirect_uri", requestModel.RedirectUri },
                     { "scope", requestModel.Scope },
+                    { "audience", requestModel.Audience },
                     { "response_mode", requestModel.ResponseMode },
                     { "response_type", requestModel.ResponseType },
                     { "state", requestModel.State },
@@ -104,7 +106,7 @@ namespace DevOidc.Functions.Functions
 
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(FormView.RenderHtml(body),Encoding.UTF8, "text/html")
+                Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
             };
         }
 
@@ -130,6 +132,8 @@ namespace DevOidc.Functions.Functions
             var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
                 ?? new ScopeDto { ScopeId = requestModel.ClientId };
 
+            var audience = !string.IsNullOrWhiteSpace(requestModel.Audience) ? requestModel.Audience : scope.ScopeId;
+
             var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
             if (user == null)
             {
@@ -138,11 +142,11 @@ namespace DevOidc.Functions.Functions
 
             if (requestModel.ResponseType == "id_token")
             {
-                return await RedirectIdTokenToClientApp(req, requestModel, tenant, user, client, scope);
+                return await RedirectIdTokenToClientAppAsync(req, requestModel, tenant, user, client, scope);
             }
             else if (requestModel.ResponseType == "code")
             {
-                return await RedirectCodeToClientApp(requestModel, tenant, user, client, scope);
+                return await RedirectCodeToClientAppAsync(requestModel, tenant, user, client, scope, audience);
             }
             else
             {
@@ -167,7 +171,7 @@ namespace DevOidc.Functions.Functions
             return response;
         }
 
-        private async Task<HttpResponseMessage> RedirectIdTokenToClientApp(HttpRequest req, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
+        private async Task<HttpResponseMessage> RedirectIdTokenToClientAppAsync(HttpRequest req, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
         {
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
             if (encryptionProvider == null)
@@ -175,7 +179,7 @@ namespace DevOidc.Functions.Functions
                 return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", req, requestModel);
             }
 
-            var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope, requestModel.Nonce);
+            var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
             var idToken = _jwtProvider.CreateJwt(idTokenClaims, tenant.TokenLifetime, encryptionProvider);
 
             if (requestModel.ResponseMode == "form_post")
@@ -206,9 +210,9 @@ namespace DevOidc.Functions.Functions
             }
         }
 
-        private async Task<HttpResponseMessage> RedirectCodeToClientApp(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
+        private async Task<HttpResponseMessage> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience)
         {
-            var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope, requestModel.Scopes, requestModel.Nonce);
+            var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
 
             if (requestModel.ResponseMode == "form_post")
             {

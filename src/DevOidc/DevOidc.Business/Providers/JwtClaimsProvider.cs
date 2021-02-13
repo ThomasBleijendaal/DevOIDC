@@ -15,7 +15,7 @@ namespace DevOidc.Business.Providers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, ScopeDto scope)
+        public Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, string? audience)
         {
             var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
 
@@ -23,11 +23,15 @@ namespace DevOidc.Business.Providers
             {
                 { "sub", user.UserId },
                 { "iss", $"{baseUri}{client.TenantId}" },
-                { "aud", scope.ScopeId },
                 { "email", user.UserName },
                 { "name", user.FullName },
                 { "__dev-oidc-token_type", "access-token" }
             };
+
+            if (!string.IsNullOrWhiteSpace(audience))
+            {
+                dict.Add("aud", audience!);
+            }
 
             AddClaims(client.AccessTokenExtraClaims, dict);
             AddClaims(user.AccessTokenExtraClaims, dict);
@@ -35,7 +39,7 @@ namespace DevOidc.Business.Providers
             return dict;
         }
 
-        public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, ScopeDto scope, string? nonce)
+        public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, string scope, string? nonce)
         {
             var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
 
@@ -43,7 +47,7 @@ namespace DevOidc.Business.Providers
             {
                 { "sub", user.UserId },
                 { "iss", $"{baseUri}{client.TenantId}" },
-                { "aud", scope.ScopeId },
+                { "aud", scope },
                 { "name", user.FullName },
                 { "__dev-oidc-token_type", "id-token" }
             };

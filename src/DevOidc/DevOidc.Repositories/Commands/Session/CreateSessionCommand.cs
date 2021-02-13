@@ -6,20 +6,22 @@ namespace DevOidc.Repositories.Commands.Session
 {
     public class CreateSessionCommand : ICommand
     {
-        public CreateSessionCommand(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes)
+        public CreateSessionCommand(string tenantId, UserDto user, ClientDto client, string scopeId, IEnumerable<string> requestedScopes, string? audience)
         {
             TenantId = tenantId;
             User = user;
             Client = client;
-            Scope = scope;
+            ScopeId = scopeId;
             RequestedScopes = requestedScopes;
+            Audience = audience;
         }
 
         public string TenantId { get; }
         public UserDto User { get; }
         public ClientDto Client { get; }
-        public ScopeDto Scope { get; }
+        public string ScopeId { get; }
         public IEnumerable<string> RequestedScopes { get; }
+        public string? Audience { get; }
 
         public string? SessionId { get; internal set; }
     }

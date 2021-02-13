@@ -14,7 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RapidCMS.Core.Abstractions.Setup;
-using RapidCMS.Core.Authorization;
 using RapidCMS.Core.Enums;
 using RapidCMS.UI.Components.Buttons;
 
@@ -22,6 +21,7 @@ namespace DevOidc.Cms
 {
     public class Program
     {
+        // TODO: update to 3.8.x
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -107,7 +107,11 @@ namespace DevOidc.Cms
                         {
                             section.AddField(x => x.Id).SetName("Tenant Id").SetType(DisplayType.Pre);
                             section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
+                            
                             section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}/.well-known/openid-configuration").SetType(DisplayType.Pre).SetName("Metadata endpoint");
+                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}").SetType(DisplayType.Pre).SetName("Authority");
+                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}").SetType(DisplayType.Pre).SetName("Issuer / token source");
+
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.TokenLifetime.TotalSeconds).SetName("Token lifetime").SetDescription("In seconds").SetType(DisplayType.Label);

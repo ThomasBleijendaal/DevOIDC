@@ -15,6 +15,9 @@ namespace DevOidc.Functions.Models.Request
         [JsonProperty("scope")]
         public string? Scope { get; set; }
 
+        [JsonProperty("audience")]
+        public string? Audience { get; set; }
+
         [JsonIgnore]
         public IEnumerable<string> Scopes => Scope?.Split(' ') ?? Enumerable.Empty<string>();
 

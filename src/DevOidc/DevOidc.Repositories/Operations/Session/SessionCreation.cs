@@ -20,9 +20,10 @@ namespace DevOidc.Repositories.Operations.Session
         public Action<SessionEntity> Mutation => session =>
         {
             session.ClientId = _command.Client.ClientId;
-            session.ScopeId = _command.Scope.ScopeId;
+            session.ScopeId = _command.ScopeId;
             session.UserId = _command.User.UserId;
             session.RequestedScopes = JsonConvert.SerializeObject(_command.RequestedScopes);
+            session.Audience = _command.Audience;
         };
 
         public string CreatedId { set => _command.SessionId = value; }

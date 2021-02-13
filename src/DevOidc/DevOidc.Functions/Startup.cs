@@ -27,6 +27,8 @@ namespace DevOidc.Functions
 {
     public class Startup : FunctionsStartup
     {
+        // TODO: convert to .NET 5.0 function app
+
         public override void Configure(IFunctionsHostBuilder builder)
         {
             var config = builder.GetContext().Configuration;
@@ -68,7 +70,7 @@ namespace DevOidc.Functions
             builder.Services.AddTransient<ICommandHandler<DeleteClientCommand>, DeleteClientCommandHandler>();
 
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddTransient<IAuthenticationValidator, AzureAdJwtBearerValidator>();
+            builder.Services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();
             builder.Services.AddOptions<AzureAdConfig>().Bind(config.GetSection("AzureAd"));
         }
     }

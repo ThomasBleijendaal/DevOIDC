@@ -29,7 +29,7 @@ namespace DevOidc.Functions.Functions
                 TokenEndpoint = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/token",
                 TokenEndpointAuthMethodsSupported = new[] { "client_secret_post", "private_key_jwt", "client_secret_basic" },
                 JwksUri = $"{req.HttpContext.GetServerBaseUri()}{tenantId}/discovery/keys",
-                ResponseModesSupported = new[] { "query", "fragment", "form_post" },
+                ResponseModesSupported = new[] { "fragment", "form_post", "query"},
                 SubjectTypesSupported = new[] { "pairwise" },
                 IdTokenSigningAlgValuesSupported = new[] { "RS256" },
                 ResponseTypesSupported = new[] { "code", "id_token", "code id_token", "token id_token", "token" },

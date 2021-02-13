@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Extensions;
-using DevOidc.Core.Models;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
 using Microsoft.AspNetCore.Http;
@@ -76,18 +75,18 @@ namespace DevOidc.Functions.Functions
             var accessToken = default(string);
             var idToken = default(string);
 
-            if (_scopeProvider.AccessTokenRequested(session.RequestedScopes))
+            if (_scopeProvider.AccessTokenRequested(session))
             {
-                var accessTokenClaims =_claimsProvider.CreateAccessTokenClaims(session.User, session.Client, session.Scope);
+                var accessTokenClaims =_claimsProvider.CreateAccessTokenClaims(session.User, session.Client, session.Audience);
                 accessToken = _jwtProvider.CreateJwt(accessTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
             }
-            if (_scopeProvider.IdTokenRequested(session.RequestedScopes))
+            if (_scopeProvider.IdTokenRequested(session))
             {
-                var idTokenClaims = _claimsProvider.CreateIdTokenClaims(session.User, session.Client, new ScopeDto { ScopeId = session.Client.ClientId }, session.Nonce);
+                var idTokenClaims = _claimsProvider.CreateIdTokenClaims(session.User, session.Client, session.ScopeId, session.Nonce);
                 idToken = _jwtProvider.CreateJwt(idTokenClaims, session.Tenant.TokenLifetime, encryptionProvider);
             }
 
-            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.Scope, session.RequestedScopes, session.Nonce);
+            var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.ScopeId, session.RequestedScopes, session.Audience, session.Nonce);
 
             return new OkObjectResult(new TokenResponseModel
             {

@@ -36,16 +36,16 @@ namespace DevOidc.Business.Session
             _createSessionCommandHandler = createSessionCommandHandler;
         }
 
-        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
+        public async Task<string> CreateLongLivedSessionAsync(string tenantId, UserDto user, ClientDto client, string scopeId, IEnumerable<string> requestedScopes, string? audience, string? nonce)
         {
-            var createCommand = new CreateSessionCommand(tenantId, user, client, scope, requestedScopes);
+            var createCommand = new CreateSessionCommand(tenantId, user, client, scopeId, requestedScopes, audience);
 
             await _createSessionCommandHandler.HandleAsync(createCommand);
 
             return createCommand.SessionId ?? throw new ConflictException();
         }
 
-        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, ScopeDto scope, IEnumerable<string> requestedScopes, string? nonce)
+        public async Task<string> CreateSessionAsync(string tenantId, UserDto user, ClientDto client, string scopeId, IEnumerable<string> requestedScopes, string? audience, string? nonce)
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant == null)
@@ -61,11 +61,12 @@ namespace DevOidc.Business.Session
                 new SessionDto
                 {
                     Client = client,
-                    Scope = scope,
+                    ScopeId = scopeId,
                     Tenant = tenant,
                     User = user,
                     RequestedScopes = requestedScopes.ToList(),
-                    Nonce = nonce
+                    Nonce = nonce,
+                    Audience = audience
                 });
 
             return refreshCode;
@@ -84,6 +85,7 @@ namespace DevOidc.Business.Session
             var client = await _tenantService.GetClientAsync(tenantId, session.ClientId);
             var scope = client?.Scopes.FirstOrDefault(x => x.ScopeId == session.ScopeId);
 
+            // check if the session is useful to restore
             if (client == null || user == null || tenant == null || scope == null)
             {
                 return default;
@@ -95,10 +97,11 @@ namespace DevOidc.Business.Session
             {
                 Client = client,
                 RequestedScopes = session.RequestedScopes.ToList(),
-                Scope = scope,
+                ScopeId = scope.ScopeId,
                 Tenant = tenant,
                 User = user,
-                Nonce = session.Nonce
+                Nonce = session.Nonce,
+                Audience = session.Audience
             };
         }
 
