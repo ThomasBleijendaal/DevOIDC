@@ -85,6 +85,9 @@ namespace DevOidc.Functions
 
         public void ConfigureWorker(IFunctionsWorkerApplicationBuilder builder)
         {
+            builder.UseContextAccessor();
+
+            builder.UseAuthentication();
             builder.UseAuthorization();
 
             builder.UseFunctionExecutionMiddleware();

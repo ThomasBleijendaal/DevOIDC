@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace DevOidc.Functions.Functions.Base
 {
+    [Obsolete]
     public abstract class BaseAdAuthenticatedFunctions
     {
         private readonly AzureAdConfig _config;
@@ -25,6 +26,6 @@ namespace DevOidc.Functions.Functions.Base
                 new Uri(new Uri(_config.Instance), _config.TenantId),
                 _config.ClientId,
                 _config.ValidAudience,
-                new Uri(new Uri(_config.Issuer), $"{_config.TenantId}/"));
+                _config.ValidIssuer);
     }
 }

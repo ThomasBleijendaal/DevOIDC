@@ -4,25 +4,26 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Validators
 {
     internal class JwtBearerValidator : IAuthenticationValidator
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
         private readonly ILogger<JwtBearerValidator> _logger;
 
         public JwtBearerValidator(
-            IHttpContextAccessor httpContextAccessor,
+            IFunctionExecutionContextAccessor functionExecutionContextAccessor,
             ILogger<JwtBearerValidator> logger)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _functionExecutionContextAccessor = functionExecutionContextAccessor;
             _logger = logger;
         }
 
@@ -115,18 +116,29 @@ namespace DevOidc.Functions.Validators
             return configurationManager;
         }
 
-        private string GetAccessToken()
+        private string? GetAccessToken()
         {
-            _httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authorizationHeaders);
-            var authorizationHeader = authorizationHeaders.ToString();
-
-            if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.Contains("Bearer "))
+            if (_functionExecutionContextAccessor.FunctionExecutionContext?.InvocationRequest is InvocationRequest invocation)
             {
-                throw new UnauthorizedAccessException();
+                var req = invocation.InputData.FirstOrDefault(x => x.Name == "req");
+
+                if (req?.Data?.Http != null)
+                {
+                    try
+                    {
+                        var request = new Microsoft.Azure.Functions.Worker.HttpRequestData(req.Data.Http);
+
+                        var authorizationHeader = request.Headers.FirstOrDefault(x => x.Key.Equals("authorization", StringComparison.InvariantCultureIgnoreCase));
+                        if (authorizationHeader.Value is string headerValue)
+                        {
+                            return headerValue.Replace("Bearer ", "");
+                        }
+                    }
+                    catch { }
+                }
             }
 
-            var accessToken = authorizationHeader["Bearer ".Length..];
-            return accessToken;
+            return default;
         }
     }
 }

@@ -1,23 +1,23 @@
 ﻿using System.Collections.Generic;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Extensions;
 using DevOidc.Core.Models;
-using Microsoft.AspNetCore.Http;
+using DevOidc.Functions.Extensions;
+using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Business.Providers
 {
     public class JwtClaimsProvider : IClaimsProvider
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
 
-        public JwtClaimsProvider(IHttpContextAccessor httpContextAccessor)
+        public JwtClaimsProvider(IFunctionExecutionContextAccessor functionExecutionContextAccessor)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _functionExecutionContextAccessor = functionExecutionContextAccessor;
         }
 
         public Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, string? audience)
         {
-            var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
+            var baseUri = _functionExecutionContextAccessor.FunctionExecutionContext?.GetBaseUri(client.TenantId);
 
             var dict = new Dictionary<string, object>
             {
@@ -41,7 +41,7 @@ namespace DevOidc.Business.Providers
 
         public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, string scope, string? nonce)
         {
-            var baseUri = _httpContextAccessor.HttpContext.GetServerBaseUri();
+            var baseUri = _functionExecutionContextAccessor.FunctionExecutionContext?.GetBaseUri(client.TenantId);
 
             var dict = new Dictionary<string, object>
             {

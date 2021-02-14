@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Extensions;
 using DevOidc.Functions.Abstractions;
-using Microsoft.AspNetCore.Http;
+using DevOidc.Functions.Authentication;
+using DevOidc.Functions.Extensions;
+using DevOidc.Functions.Responses;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Functions
 {
@@ -32,75 +30,56 @@ namespace DevOidc.Functions.Functions
         }
 
         [FunctionName(nameof(TestOidcTokenAsync))]
-        public async Task<HttpResponseMessage> TestOidcTokenAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequest req,
-            string tenantId,
-            string clientId,
-            string scope)
+        public async Task<HttpResponseData> TestOidcTokenAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequestData req, 
+            FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId) || !req.Params.TryGetValue("clientId", out var clientId) || !req.Params.TryGetValue("scope", out var scope))
+            {
+                return Response.BadRequest();
+            }
+
             try
             {
-                var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
+                var instance = new Uri(new Uri(context.GetBaseUri("test")), tenantId);
                 var user = await _authenticationValidator.GetValidUserAsync(instance, clientId, scope);
 
-                return ClaimsAsJson(user);
+                return Response.Json(user.Claims.ToDictionary(x => x.Type, x => x.Value));
             }
             catch (Exception ex)
             {
-                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                {
-                    Content = new StringContent(ex.Message)
-                };
+                return Response.Unauthorized(ex.Message);
             }
         }
 
         [FunctionName(nameof(GetUserInfoAsync))]
-        public async Task<HttpResponseMessage> GetUserInfoAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/oidc/userinfo")] HttpRequest req,
-            string tenantId)
+        public async Task<HttpResponseData> GetUserInfoAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/oidc/userinfo")] HttpRequestData req, FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return Response.BadRequest();
+            }
+
             try
             {
-                var instance = new Uri(req.HttpContext.GetServerBaseUri(), tenantId);
+                var instance = new Uri(context.GetBaseUri("oidc"));
                 var principal = await _authenticationValidator.GetClaimsAysnc(instance);
 
                 var user = await _userService.GetUserByIdAsync(tenantId, principal.Claims.First(x => x.Type == "sub").Value);
                 if (user == null)
                 {
-                    return new HttpResponseMessage(HttpStatusCode.Forbidden);
+                    return Response.Forbidden();
                 }
 
                 var claims = _claimsProvider.CreateUserInfoClaims(user);
 
-                return ClaimsAsJson(claims);
+                return Response.Json(claims);
             }
             catch (Exception ex)
             {
-                return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                {
-                    Content = new StringContent(ex.Message)
-                };
+                return Response.Unauthorized(ex.Message);
             }
-        }
-
-        private static HttpResponseMessage ClaimsAsJson(System.Security.Claims.ClaimsPrincipal user)
-        {
-            var json = JsonConvert.SerializeObject(user.Claims.ToDictionary(x => x.Type, x => x.Value));
-
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
-        }
-
-        private static HttpResponseMessage ClaimsAsJson(IReadOnlyDictionary<string, object> claims)
-        {
-            var json = JsonConvert.SerializeObject(claims);
-
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(json, Encoding.UTF8, "application/json")
-            };
         }
     }
 }
