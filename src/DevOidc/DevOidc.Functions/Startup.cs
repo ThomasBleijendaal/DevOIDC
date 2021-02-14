@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Azure.Data.Tables;
 using DevOidc.Business.Abstractions;
 using DevOidc.Business.Providers;
 using DevOidc.Business.Scopes;
 using DevOidc.Business.Session;
 using DevOidc.Business.Tenant;
+using DevOidc.Cms.Core.Abstractions;
+using DevOidc.Cms.Core.Models;
+using DevOidc.Cms.Core.Repositories;
+using DevOidc.Cms.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Abstractions;
 using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Validators;
@@ -18,15 +24,18 @@ using DevOidc.Repositories.Handlers.Session;
 using DevOidc.Repositories.Handlers.Tenant;
 using DevOidc.Repositories.Handlers.User;
 using DevOidc.Repositories.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Azure.Functions.Worker.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RapidCMS.Core.Abstractions.Data;
 
 namespace DevOidc.Functions
 {
     public class Startup
     {
-        // TODO: convert to .NET 5.0 function app
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -37,6 +46,8 @@ namespace DevOidc.Functions
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMemoryCache();
+            services.AddAuthorizationCore();
+            services.AddSingleton<IAuthorizationHandler, VeryPermissiveAuthorizationHandler>();
 
             services.AddTransient<IJwtProvider, RS256JwtProvider>();
             services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
@@ -76,10 +87,19 @@ namespace DevOidc.Functions
             services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();
             services.AddOptions<AzureAdConfig>().Bind(Configuration.GetSection("AzureAd"));
 
-            // TODO: why is Core + Api.Core not automatically included?
+            services.AddSingleton<IUserResolver, UserResolver>();
+            services.AddScoped<TenantRepository>();
+            services.AddScoped<UserRepository>();
+            services.AddScoped<ClientRepository>();
+
+            services.AddLogging(logging => logging.AddConsole());
+
+            // TODO: why is Core + Api.Core + Dependencies not automatically included?
             services.AddRapidCMSFunctions(config =>
             {
-
+                config.RegisterRepository<TenantCmsModel, TenantDto, TenantRepository>();
+                config.RegisterRepository<UserCmsModel, UserDto, UserRepository>();
+                config.RegisterRepository<ClientCmsModel, ClientDto, ClientRepository>();
             });
         }
 
@@ -91,6 +111,16 @@ namespace DevOidc.Functions
             builder.UseAuthorization();
 
             builder.UseFunctionExecutionMiddleware();
+        }
+    }
+
+    public class VeryPermissiveAuthorizationHandler : AuthorizationHandler<OperationAuthorizationRequirement, IEntity>
+    {
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, OperationAuthorizationRequirement requirement, IEntity resource)
+        {
+            context.Succeed(requirement);
+
+            return Task.CompletedTask;
         }
     }
 }

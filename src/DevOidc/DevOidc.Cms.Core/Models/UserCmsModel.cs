@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using GeneratedMapper.Attributes;
 using RapidCMS.Core.Abstractions.Data;
 

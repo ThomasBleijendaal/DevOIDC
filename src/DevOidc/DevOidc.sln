@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Repositories", "Dev
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Cms", "DevOidc.Cms\DevOidc.Cms.csproj", "{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOidc.Cms.Core", "DevOidc.Cms.Core\DevOidc.Cms.Core.csproj", "{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

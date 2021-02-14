@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DevOidc.Core.Models
+namespace DevOidc.Core.Models.Dtos
 {
     public class TenantDto
     {

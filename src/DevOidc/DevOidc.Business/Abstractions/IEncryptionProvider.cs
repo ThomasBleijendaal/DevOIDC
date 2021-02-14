@@ -1,5 +1,5 @@
 ﻿using System;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 
 namespace DevOidc.Business.Abstractions
 {

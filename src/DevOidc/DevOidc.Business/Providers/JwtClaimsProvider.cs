@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Extensions;
 using RapidCMS.Api.Functions.Abstractions;
 

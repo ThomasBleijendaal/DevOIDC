@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 
-namespace DevOidc.Core.Models
+namespace DevOidc.Core.Models.Dtos
 {
-    public class StoredSessionDto
+    public class SessionDto
     {
         public List<string> RequestedScopes { get; set; } = default!;
         public string? Nonce { get; set; }
-        public string TenantId { get; set; } = default!;
-        public string UserId { get; set; } = default!;
-        public string ClientId { get; set; } = default!;
+        public UserDto User { get; set; } = default!;
+        public TenantDto Tenant { get; set; } = default!;
+        public ClientDto Client { get; set; } = default!;
         public string ScopeId { get; set; } = default!;
         public string? Audience { get; set; } = default!;
     }

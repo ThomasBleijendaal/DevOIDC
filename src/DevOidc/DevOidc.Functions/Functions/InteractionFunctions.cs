@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;

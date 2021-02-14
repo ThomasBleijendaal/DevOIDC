@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Entities;
 using DevOidc.Repositories.Specifications.User;

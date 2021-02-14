@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using DevOidc.Cms.Components.Editors;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using GeneratedMapper.Attributes;
 using RapidCMS.Core.Abstractions.Data;
 
-namespace DevOidc.Cms.Models
+namespace DevOidc.Cms.Core.Models
 {
     [MapFrom(typeof(ClientDto))]
     [MapTo(typeof(ClientDto))]
@@ -13,9 +12,8 @@ namespace DevOidc.Cms.Models
     public class ClientCmsModel : IEntity
     {
         [MapWith(nameof(ClientDto.ClientId), IgnoreNullIncompatibility = true)]
-        public string? Id { get; set; } = "";
+        public string Id { get; set; } = "";
 
-        [Display(ShortName = "Name", Name = "Name", Order = 0)]
         [Required]
         public string Name { get; set; } = "";
 
@@ -25,11 +23,9 @@ namespace DevOidc.Cms.Models
         [Required]
         public List<ScopeDto> Scopes { get; set; } = new List<ScopeDto>();
 
-        [Display(ShortName = "Extra claims (access token)", Name = "Extra claims (access token)", ResourceType = typeof(ClaimEditor), Order = 0)]
         [Required]
         public Dictionary<string, string> AccessTokenExtraClaims { get; set; } = new Dictionary<string, string>();
 
-        [Display(ShortName = "Extra claims (id token)", Name = "Extra claims (id token)", ResourceType = typeof(ClaimEditor), Order = 0)]
         [Required]
         public Dictionary<string, string> IdTokenExtraClaims { get; set; } = new Dictionary<string, string>();
     }

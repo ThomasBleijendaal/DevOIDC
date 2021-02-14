@@ -1,5 +1,5 @@
 ﻿using System;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Repositories.Entities;
 
 namespace DevOidc.Repositories.Specifications.Base

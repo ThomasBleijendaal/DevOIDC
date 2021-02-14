@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using Jose;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;

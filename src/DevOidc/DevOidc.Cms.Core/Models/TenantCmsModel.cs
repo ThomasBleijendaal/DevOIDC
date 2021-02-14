@@ -1,5 +1,5 @@
 ﻿using System;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using GeneratedMapper.Attributes;
 using Newtonsoft.Json;
 using RapidCMS.Core.Abstractions.Data;
@@ -7,13 +7,14 @@ using RapidCMS.Core.Abstractions.Data;
 namespace DevOidc.Cms.Models
 {
     [MapFrom(typeof(TenantDto))]
+    [MapTo(typeof(TenantDto))]
     public class TenantCmsModel : IEntity
     {
-        [MapWith(nameof(TenantDto.TenantId))]
+        [MapWith(nameof(TenantDto.TenantId), IgnoreNullIncompatibility = true)]
         public string? Id { get; set; }
-        public string? Name { get; set; }
-        public string? OwnerName { get; set; }
-        public string? Description { get; set; }
+        public string Name { get; set; } = default!;
+        public string OwnerName { get; set; } = default!;
+        public string Description { get; set; } = default!;
         public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromMinutes(5);
 
         [Ignore]
