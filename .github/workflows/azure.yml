@@ -1,6 +1,7 @@
-on:
-  release:
-    types: [created]
+on: 
+    push:
+        branches:
+        - main
 
 env:
   AZURE_FUNCTIONAPP_PATH: 'src/DevOidc/DevOidc.Functions'
