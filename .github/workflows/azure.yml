@@ -11,7 +11,7 @@ env:
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     environment: production
     steps:
     - uses: actions/checkout@v1
@@ -35,6 +35,6 @@ jobs:
       with:
         inlineScript: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}/output'
-          func azure functionapp publish devoidc1234 --force 
-          az webapp config set -g DevOIDC -n devoidc1234 --net-framework-version v5.0 
-          az webapp config appsettings set -g DevOIDC -n devoidc1234 --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+          func azure functionapp publish devoidc --force 
+          az webapp config set -g DevOIDC -n devoidc --net-framework-version v5.0 
+          az webapp config appsettings set -g DevOIDC -n devoidc --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
