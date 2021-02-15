@@ -4,9 +4,9 @@ using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Authentication
 {
+    // this class is temporary
     public static class FunctionsWorkerApplicationBuilderExtensions
     {
-        // this class is temporary
         public static IFunctionsWorkerApplicationBuilder UseAuthentication(this IFunctionsWorkerApplicationBuilder builder)
         {
             builder.Services.AddSingleton<AuthenticationMiddleware>();

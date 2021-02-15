@@ -13,7 +13,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Repositories", "Dev
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Cms", "DevOidc.Cms\DevOidc.Cms.csproj", "{F385659C-139F-4EF7-9B99-CB2E8D1D90C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevOidc.Cms.Core", "DevOidc.Cms.Core\DevOidc.Cms.Core.csproj", "{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevOidc.Cms.Core", "DevOidc.Cms.Core\DevOidc.Cms.Core.csproj", "{4C29CAB3-6A3B-4953-A211-A492CF7CF9BC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2FC2A211-0ACB-437B-819F-8F6EDB3FEE51}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\.github\workflows\azure.yml = ..\..\.github\workflows\azure.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

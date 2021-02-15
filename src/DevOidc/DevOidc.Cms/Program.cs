@@ -8,7 +8,6 @@ using DevOidc.Cms.Core.Models;
 using DevOidc.Cms.Handlers;
 using DevOidc.Cms.Models;
 using DevOidc.Core.Models.Dtos;
-using GeneratedMapper.Attributes;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;

@@ -121,7 +121,6 @@ namespace DevOidc.Functions.Validators
             if (_functionExecutionContextAccessor.FunctionExecutionContext?.InvocationRequest is InvocationRequest invocation)
             {
                 var req = invocation.InputData.FirstOrDefault(x => x.Name == "req");
-
                 if (req?.Data?.Http != null)
                 {
                     try
