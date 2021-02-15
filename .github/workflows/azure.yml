@@ -2,7 +2,6 @@ on:
     push:
         branches:
         - main
-        - dotnet5functions
 
 env:
   AZURE_FUNCTIONAPP_PATH: 'src/DevOidc/DevOidc.Functions'
@@ -19,7 +18,7 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '5.0.100'
-    - name: Resolve Project Dependencies Using Dotnet
+    - name: Build Function App
       shell: bash
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}'
@@ -30,17 +29,17 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Hack for next step
+    - name: Hack for next step (set runtime to None)
       uses: azure/CLI@v1
       with:
         inlineScript: |
           az webapp config appsettings set -g DevOIDC -n devoidc --settings FUNCTIONS_WORKER_RUNTIME=None
-    - name: Azure Functions Action
+    - name: Publish Function App
       uses: Azure/functions-action@v1.3.1
       with:
         app-name: devoidc
         package: ${{ env.AZURE_FUNCTIONAPP_PATH }}/output
-    - name: Publish FA
+    - name: Update Function App (set runtime to dotnet-isolated & .net version to v5.0)
       uses: azure/CLI@v1
       with:
         inlineScript: |
