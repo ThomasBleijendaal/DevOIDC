@@ -34,6 +34,8 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
+          sudo apt-get update
+          sudo apt-get install azure-functions-core-tools-3
           pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}/output'
           func azure functionapp publish devoidc --force 
           az webapp config set -g DevOIDC -n devoidc --net-framework-version v5.0 
