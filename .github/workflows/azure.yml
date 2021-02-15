@@ -1,0 +1,38 @@
+on:
+  release:
+    types: [created]
+
+env:
+  AZURE_FUNCTIONAPP_PATH: 'src/DevOidc/DevOidc.Functions'
+  AZURE_FUNCTIONAPP_NAME: DevOIDC
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: windows-latest
+    environment: production
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.100'
+    - name: Resolve Project Dependencies Using Dotnet
+      shell: bash
+      run: |
+        pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}'
+        dotnet build --configuration Release --output ./output
+        dir -r
+        popd
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Publish FA
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}/output'
+          func azure functionapp publish devoidc1234 --force 
+          az webapp config set -g DevOIDC -n devoidc1234 --net-framework-version v5.0 
+          az webapp config appsettings set -g DevOIDC -n devoidc1234 --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
