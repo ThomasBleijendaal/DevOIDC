@@ -4,7 +4,6 @@ using DevOidc.Functions.Abstractions;
 using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Options;
-using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Authentication
 {
@@ -14,22 +13,17 @@ namespace DevOidc.Functions.Authentication
 
         private readonly AzureAdConfig _authenticationConfig;
         private readonly IAuthenticationValidator _authenticationValidator;
-        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
-
+        
         public AuthenticationMiddleware(
             IOptions<AzureAdConfig> authenticationConfig,
-            IAuthenticationValidator authenticationValidator,
-            IFunctionExecutionContextAccessor functionExecutionContextAccessor)
+            IAuthenticationValidator authenticationValidator)
         {
             _authenticationConfig = authenticationConfig.Value;
             _authenticationValidator = authenticationValidator;
-            _functionExecutionContextAccessor = functionExecutionContextAccessor;
         }
 
         public async Task InvokeAsync(FunctionExecutionContext context, FunctionExecutionDelegate next)
         {
-            _functionExecutionContextAccessor.FunctionExecutionContext = context;
-
             if (context.InvocationRequest is InvocationRequest invocation)
             {
                 var req = invocation.InputData.FirstOrDefault(x => x.Name == "req");

@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Security.Claims;
 using DevOidc.Functions.Abstractions;
+using DevOidc.Functions.Authentication;
 using RapidCMS.Api.Functions.Abstractions;
 
-namespace DevOidc.Functions.Authentication
+namespace DevOidc.Functions.Resolvers
 {
     public class UserResolver : IUserResolver
     {
@@ -17,8 +18,8 @@ namespace DevOidc.Functions.Authentication
         public ClaimsPrincipal ResolveUser()
         {
             return (_functionExecutionContextAccessor.FunctionExecutionContext != null &&
-                _functionExecutionContextAccessor.FunctionExecutionContext.Items.TryGetValue(AuthenticationMiddleware.ContextUser, out var user) 
-                    ? user as ClaimsPrincipal 
+                _functionExecutionContextAccessor.FunctionExecutionContext.Items.TryGetValue(AuthenticationMiddleware.ContextUser, out var user)
+                    ? user as ClaimsPrincipal
                     : default)
                 ?? throw new UnauthorizedAccessException();
         }
