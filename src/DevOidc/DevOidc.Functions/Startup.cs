@@ -12,6 +12,7 @@ using DevOidc.Cms.Models;
 using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Abstractions;
 using DevOidc.Functions.Authentication;
+using DevOidc.Functions.Resolvers;
 using DevOidc.Functions.Validators;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Commands.Client;
@@ -87,6 +88,7 @@ namespace DevOidc.Functions
             services.AddOptions<AzureAdConfig>().Bind(Configuration.GetSection("AzureAd"));
 
             services.AddSingleton<IUserResolver, UserResolver>();
+            services.AddSingleton<IBaseUriResolver, BaseUriResolver>();
             services.AddScoped<TenantRepository>();
             services.AddScoped<UserRepository>();
             services.AddScoped<ClientRepository>();

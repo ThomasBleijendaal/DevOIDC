@@ -1,6 +1,4 @@
-﻿using System;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
 using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Extensions;

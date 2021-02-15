@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -38,8 +37,6 @@ namespace DevOidc.Functions.Validators
 
             try
             {
-                IdentityModelEventSource.ShowPII = true;
-
                 var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
 
                 var tokenValidator = new JwtSecurityTokenHandler
@@ -80,8 +77,6 @@ namespace DevOidc.Functions.Validators
 
             try
             {
-                IdentityModelEventSource.ShowPII = true;
-
                 var oidcWellknownEndpoints = await configurationManager.GetConfigurationAsync();
 
                 var tokenValidator = new JwtSecurityTokenHandler

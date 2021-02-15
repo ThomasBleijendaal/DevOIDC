@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy
+    name: Build and Deploy Function App + Static CMS
     runs-on: ubuntu-latest
     environment: production
     steps:
@@ -46,3 +46,15 @@ jobs:
         inlineScript: |
           az webapp config set -g DevOIDC -n devoidc --net-framework-version v5.0 
           az webapp config appsettings set -g DevOIDC -n devoidc --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+    - name: Build Static CMS
+      shell: bash
+      run: |
+        dotnet publish --configuration Release --output .\publish
+        rm .\publish\wwwroot\appsettings.Development.json
+        rm .\publish\wwwroot\appsettings.Development.json.br
+        rm .\publish\wwwroot\appsettings.Development.json.gz
+    - name: Upload Static CMS
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az storage blob upload-batch -d '$web' --account-name devoidc -s ./publish/wwwroot

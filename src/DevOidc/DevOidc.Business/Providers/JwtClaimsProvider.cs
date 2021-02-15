@@ -1,23 +1,21 @@
 ﻿using System.Collections.Generic;
 using DevOidc.Business.Abstractions;
 using DevOidc.Core.Models.Dtos;
-using DevOidc.Functions.Extensions;
-using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Business.Providers
 {
     public class JwtClaimsProvider : IClaimsProvider
     {
-        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
+        private readonly IBaseUriResolver _baseUriResolver;
 
-        public JwtClaimsProvider(IFunctionExecutionContextAccessor functionExecutionContextAccessor)
+        public JwtClaimsProvider(IBaseUriResolver baseUriResolver)
         {
-            _functionExecutionContextAccessor = functionExecutionContextAccessor;
+            _baseUriResolver = baseUriResolver;
         }
 
         public Dictionary<string, object> CreateAccessTokenClaims(UserDto user, ClientDto client, string? audience)
         {
-            var baseUri = _functionExecutionContextAccessor.FunctionExecutionContext?.GetBaseUri(client.TenantId);
+            var baseUri = _baseUriResolver.ResolveBaseUri(client.TenantId);
 
             var dict = new Dictionary<string, object>
             {
@@ -41,7 +39,7 @@ namespace DevOidc.Business.Providers
 
         public Dictionary<string, object> CreateIdTokenClaims(UserDto user, ClientDto client, string scope, string? nonce)
         {
-            var baseUri = _functionExecutionContextAccessor.FunctionExecutionContext?.GetBaseUri(client.TenantId);
+            var baseUri = _baseUriResolver.ResolveBaseUri(client.TenantId);
 
             var dict = new Dictionary<string, object>
             {
