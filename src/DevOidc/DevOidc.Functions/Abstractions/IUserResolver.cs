@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace DevOidc.Cms.Core.Abstractions
+namespace DevOidc.Functions.Abstractions
 {
     public interface IUserResolver
     {

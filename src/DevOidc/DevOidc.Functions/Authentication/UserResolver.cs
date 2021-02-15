@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security.Claims;
-using DevOidc.Cms.Core.Abstractions;
 using DevOidc.Functions.Abstractions;
 using RapidCMS.Api.Functions.Abstractions;
 

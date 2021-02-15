@@ -6,7 +6,6 @@ using DevOidc.Business.Providers;
 using DevOidc.Business.Scopes;
 using DevOidc.Business.Session;
 using DevOidc.Business.Tenant;
-using DevOidc.Cms.Core.Abstractions;
 using DevOidc.Cms.Core.Models;
 using DevOidc.Cms.Core.Repositories;
 using DevOidc.Cms.Models;
@@ -53,10 +52,10 @@ namespace DevOidc.Functions
             services.AddTransient<IClaimsProvider, JwtClaimsProvider>();
             services.AddTransient<IScopeProvider, ScopeProvider>();
 
-            var tableCredentials = new TableSharedKeyCredential(Configuration["Table:AccountName"], Configuration["Table:AccountKey"]);
+            //var tableCredentials = new TableSharedKeyCredential(Configuration["Table:AccountName"], Configuration["Table:AccountKey"]);
 
-            services.AddSingleton(tableCredentials);
-            services.AddSingleton(new TableServiceClient(new Uri(Configuration["Table:Uri"]), tableCredentials));
+            //services.AddSingleton(tableCredentials);
+            //services.AddSingleton(new TableServiceClient(new Uri(Configuration["Table:Uri"]), tableCredentials));
 
             services.AddTransient(typeof(IWriteRepository<>), typeof(WriteRepository<>));
             services.AddTransient(typeof(IReadRepository<>), typeof(ReadRepository<>));
@@ -85,7 +84,7 @@ namespace DevOidc.Functions
 
             services.AddHttpContextAccessor();
             services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();
-            services.AddOptions<AzureAdConfig>().Bind(Configuration.GetSection("AzureAd"));
+            //services.AddOptions<AzureAdConfig>().Bind(Configuration.GetSection("AzureAd"));
 
             services.AddSingleton<IUserResolver, UserResolver>();
             services.AddScoped<TenantRepository>();
