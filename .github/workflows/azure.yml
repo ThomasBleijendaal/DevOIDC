@@ -23,7 +23,7 @@ jobs:
       shell: bash
       run: |
         pushd './${{ env.AZURE_FUNCTIONAPP_PATH }}'
-        dotnet build --configuration Release --output ./output
+        dotnet build --configuration Debug --output ./output
         dir -r
         popd
     - name: Azure Login

@@ -31,6 +31,10 @@ namespace DevOidc.Functions.Validators
         {
             var configurationManager = BuildConfigurationManager(instanceUri);
             var accessToken = GetAccessToken();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                throw new UnauthorizedAccessException("No access token provided.");
+            }
 
             try
             {
@@ -69,6 +73,10 @@ namespace DevOidc.Functions.Validators
         {
             var configurationManager = BuildConfigurationManager(instanceUri);
             var accessToken = GetAccessToken();
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                throw new UnauthorizedAccessException("No access token provided.");
+            }
 
             try
             {
