@@ -2,6 +2,7 @@ on:
     push:
         branches:
         - main
+        - dotnet5functions
 
 env:
   AZURE_FUNCTIONAPP_PATH: 'src/DevOidc/DevOidc.Functions'
