@@ -4,10 +4,10 @@ using DevOidc.Cms.Components.Editors;
 using DevOidc.Cms.Components.Login;
 using DevOidc.Cms.Components.Panes;
 using DevOidc.Cms.Components.Sections;
+using DevOidc.Cms.Core.Models;
 using DevOidc.Cms.Handlers;
 using DevOidc.Cms.Models;
-using DevOidc.Cms.Repositories;
-using Microsoft.AspNetCore.Components;
+using DevOidc.Core.Models.Dtos;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -15,36 +15,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RapidCMS.Core.Abstractions.Setup;
 using RapidCMS.Core.Enums;
+using RapidCMS.Repositories.ApiBridge;
 using RapidCMS.UI.Components.Buttons;
 
 namespace DevOidc.Cms
 {
     public class Program
     {
-        // TODO: update to 3.8.x
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
 
+            var apiUri = new Uri(builder.Configuration["Uris:Api"]);
+
             builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
             builder.Services.AddAuthorizationCore();
-
-            builder.Services
-                .AddHttpClient("cms", (httpClient) =>
-                {
-                    httpClient.BaseAddress = new Uri(builder.Configuration["Uris:Api"]);
-                }).AddHttpMessageHandler(sp =>
-                {
-                    var provider = sp.GetRequiredService<IAccessTokenProvider>();
-                    var manager = sp.GetRequiredService<NavigationManager>();
-
-                    // this forwards the bearer token to the api
-                    var handler = new AuthorizationMessageHandler(provider, manager);
-                    handler.ConfigureHandler(new[] { builder.Configuration["Uris:Api"] });
-                    return handler;
-                });
 
             builder.Services.AddMsalAuthentication(options =>
             {
@@ -54,15 +41,23 @@ namespace DevOidc.Cms
                 options.ProviderOptions.LoginMode = "redirect";
             });
 
-            builder.Services.AddScoped<ClientRepository>();
-            builder.Services.AddScoped<TenantRepository>();
-            builder.Services.AddScoped<UserRepository>();
+            builder.Services.AddRapidCMSApiTokenAuthorization(sp =>
+            {
+                var handler = sp.GetRequiredService<AuthorizationMessageHandler>();
+                handler.ConfigureHandler(new[] { apiUri.ToString() });
+                return handler;
+            });
+
+            builder.Services.AddRapidCMSAuthenticatedApiRepository<ApiMappedRepository<TenantCmsModel, TenantDto>, AuthorizationMessageHandler>(apiUri);
+            builder.Services.AddRapidCMSAuthenticatedApiRepository<ApiMappedRepository<UserCmsModel, UserDto>, AuthorizationMessageHandler>(apiUri);
+            builder.Services.AddRapidCMSAuthenticatedApiRepository<ApiMappedRepository<ClientCmsModel, ClientDto>, AuthorizationMessageHandler>(apiUri);
 
             builder.Services.AddScoped<ClaimTenantButtonHandler>();
             builder.Services.AddScoped<ResetPasswordButtonHandler>();
 
             builder.Services.AddRapidCMSWebAssembly(config =>
             {
+                config.Advanced.SemaphoreCount = 5;
                 config.SetSiteName("DevOIDC CMS");
 
                 config.SetCustomLoginStatus(typeof(LoginStatus));
@@ -71,7 +66,7 @@ namespace DevOidc.Cms
                 config.Dashboard.AddSection("tenant");
                 config.Dashboard.AddSection(typeof(OidcHelp));
 
-                config.AddCollection<TenantCmsModel, TenantRepository>("tenant", "Tenants", config =>
+                config.AddCollection<TenantCmsModel, ApiMappedRepository<TenantCmsModel, TenantDto>>("tenant", "Tenants", config =>
                 {
                     config.SetTreeView(EntityVisibilty.Visible, CollectionRootVisibility.Hidden, x => x.Name, showEntitiesOnStartup: true);
 
@@ -114,7 +109,8 @@ namespace DevOidc.Cms
 
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
-                            section.AddField(x => x.TokenLifetime.TotalSeconds).SetName("Token lifetime").SetDescription("In seconds").SetType(DisplayType.Label);
+                            section.AddField(x => x.TokenLifetimeSeconds).DisableWhen((m, s) => s == EntityState.IsExisting)
+                                .SetName("Token lifetime").SetDescription("In seconds").SetType(EditorType.Numeric);
                         });
 
                         x.AddSection(section =>
@@ -126,7 +122,7 @@ namespace DevOidc.Cms
                         });
                     });
 
-                    config.AddSubCollection<UserCmsModel, UserRepository>("user", "Contact", "Green10", "Users", config =>
+                    config.AddSubCollection<UserCmsModel, ApiMappedRepository<UserCmsModel, UserDto>>("user", "Contact", "Green10", "Users", config =>
                     {
                         config.SetTreeView(x => x.FullName);
 
@@ -185,7 +181,7 @@ namespace DevOidc.Cms
                         });
                     });
 
-                    config.AddSubCollection<ClientCmsModel, ClientRepository>("client", "Devices2", "Red10", "Clients", config =>
+                    config.AddSubCollection<ClientCmsModel, ApiMappedRepository<ClientCmsModel, ClientDto>>("client", "Devices2", "Red10", "Clients", config =>
                     {
                         config.SetTreeView(x => x.Name);
 

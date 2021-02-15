@@ -1,0 +1,34 @@
+on: 
+    push:
+        branches:
+        - main
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Static CMS
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.103'
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Build Static CMS
+      shell: bash
+      run: |
+        pushd './src/DevOidc/DevOidc.Cms'
+        dotnet publish --configuration Release --output ./publish
+        rm ./publish/wwwroot/appsettings.Development.json
+        rm ./publish/wwwroot/appsettings.Development.json.br
+        rm ./publish/wwwroot/appsettings.Development.json.gz
+        popd
+    - name: Upload Static CMS
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az storage blob upload-batch -d '$web' --account-name devoidc -s ./src/DevOidc/DevOidc.Cms/publish/wwwroot

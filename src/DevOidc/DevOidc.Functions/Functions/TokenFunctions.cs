@@ -1,16 +1,17 @@
 ﻿using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Extensions;
+using DevOidc.Functions.Authentication;
+using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using DevOidc.Functions.Responses;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: test CORS for SPA / Web
     // TODO: test nonce for refesh tokens
     public class TokenFunctions
     {
@@ -35,10 +36,14 @@ namespace DevOidc.Functions.Functions
         }
 
         [FunctionName(nameof(GetTokenByCodeAsync))]
-        public async Task<IActionResult> GetTokenByCodeAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequest req,
-            string tenantId)
+        public async Task<HttpResponseData> GetTokenByCodeAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequestData req, FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return Response.BadRequest();
+            }
+
             var requestModel = req.BindModelToForm<OidcTokenRequestModel>();
 
             var isRefreshToken = requestModel.GrantType == "refresh_token";
@@ -47,7 +52,7 @@ namespace DevOidc.Functions.Functions
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                return new BadRequestResult();
+                return Response.BadRequest();
             }
 
             var session = isRefreshToken
@@ -55,7 +60,7 @@ namespace DevOidc.Functions.Functions
                 : await _sessionService.GetSessionAsync(tenantId, code);
             if (session == null)
             {
-                return new OkObjectResult(new ErrorResonseModel
+                return Response.Json(new ErrorResonseModel
                 {
                     Error = "invalid_grant",
                     ErrorDescription = "Refresh token is expired. User should reauthenticate."
@@ -65,7 +70,7 @@ namespace DevOidc.Functions.Functions
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenantId);
             if (encryptionProvider == null)
             {
-                return new OkObjectResult(new ErrorResonseModel
+                return Response.Json(new ErrorResonseModel
                 {
                     Error = "invalid_request",
                     ErrorDescription = "Unknown tenant."
@@ -88,7 +93,7 @@ namespace DevOidc.Functions.Functions
 
             var refreshCode = await _sessionService.CreateLongLivedSessionAsync(tenantId, session.User, session.Client, session.ScopeId, session.RequestedScopes, session.Audience, session.Nonce);
 
-            return new OkObjectResult(new TokenResponseModel
+            return Response.Json(new TokenResponseModel
             {
                 TokenType = "Bearer",
                 ExpiresIn = (int)session.Tenant.TokenLifetime.TotalSeconds,

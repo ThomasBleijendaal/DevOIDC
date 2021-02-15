@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 using System.Text;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Repositories.Abstractions;
 using DevOidc.Repositories.Entities;
 

@@ -1,20 +1,21 @@
 ﻿using System.Threading.Tasks;
 using DevOidc.Cms.Models;
-using DevOidc.Cms.Repositories;
+using DevOidc.Core.Models.Dtos;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using RapidCMS.Core.Abstractions.Handlers;
 using RapidCMS.Core.Abstractions.Setup;
 using RapidCMS.Core.Authorization;
 using RapidCMS.Core.Enums;
 using RapidCMS.Core.Forms;
+using RapidCMS.Repositories.ApiBridge;
 
 namespace DevOidc.Cms.Handlers
 {
     public class ClaimTenantButtonHandler : IButtonActionHandler
     {
-        private readonly TenantRepository _tenantRepository;
+        private readonly ApiMappedRepository<TenantCmsModel, TenantDto> _tenantRepository;
 
-        public ClaimTenantButtonHandler(TenantRepository tenantRepository)
+        public ClaimTenantButtonHandler(ApiMappedRepository<TenantCmsModel, TenantDto> tenantRepository)
         {
             _tenantRepository = tenantRepository;
         }
@@ -28,10 +29,10 @@ namespace DevOidc.Cms.Handlers
         {
             if (editContext.Entity is TenantCmsModel tenant && !string.IsNullOrEmpty(tenant.Id))
             {
-                await _tenantRepository.ClaimTenantAsync(tenant.Id);
+                await _tenantRepository.UpdateAsync(new FormEditContextWrapper<TenantCmsModel>(editContext));
             }
 
-            return CrudType.Up;
+            return CrudType.Refresh;
         }
 
         public OperationAuthorizationRequirement GetOperation(IButton button, FormEditContext editContext)

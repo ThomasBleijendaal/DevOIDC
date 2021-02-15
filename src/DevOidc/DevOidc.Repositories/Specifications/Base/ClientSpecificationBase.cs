@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Repositories.Entities;
 using Newtonsoft.Json;
 

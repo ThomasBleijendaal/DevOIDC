@@ -2,22 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using DevOidc.Business.Abstractions;
-using DevOidc.Core.Extensions;
-using DevOidc.Core.Models;
+using DevOidc.Core.Models.Dtos;
+using DevOidc.Functions.Authentication;
+using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;
+using DevOidc.Functions.Responses;
 using DevOidc.Functions.Views;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 
 namespace DevOidc.Functions.Functions
 {
-    // TODO: test the audience pattern indicated by Auth0 (using the token events to add an audience and not a scope)
     public class InteractionFunctions
     {
         private readonly ITenantService _tenantService;
@@ -41,14 +41,18 @@ namespace DevOidc.Functions.Functions
         }
 
         [FunctionName(nameof(AuthorizeAsync))]
-        public async Task<HttpResponseMessage> AuthorizeAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequest req,
-            string tenantId)
+        public async Task<HttpResponseData> AuthorizeAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequestData req, FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return Response.BadRequest();
+            }
+
             var requestModel = req.BindModelToQuery<OidcAuthorizeRequestModel>();
             if (requestModel.Prompt == "none")
             {
-                return new HttpResponseMessage(HttpStatusCode.NoContent);
+                return Response.NoContent();
             }
 
             var message = requestModel.Error switch
@@ -104,17 +108,18 @@ namespace DevOidc.Functions.Functions
                 "Sign in",
                 message);
 
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
-            };
+            return Response.Html(FormView.RenderHtml(body));
         }
 
         [FunctionName(nameof(AuthorizePostbackAsync))]
-        public async Task<HttpResponseMessage> AuthorizePostbackAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequest req,
-            string tenantId)
+        public async Task<HttpResponseData> AuthorizePostbackAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequestData req, FunctionExecutionContext context)
         {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return Response.BadRequest();
+            }
+
             var requestModel = req.BindModelToForm<OidcAuthorizeRequestModel>();
 
             if (string.IsNullOrWhiteSpace(requestModel.ClientId) ||
@@ -126,7 +131,7 @@ namespace DevOidc.Functions.Functions
                 await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
                 !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", req, requestModel);
+                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context, requestModel);
             }
 
             var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
@@ -137,12 +142,12 @@ namespace DevOidc.Functions.Functions
             var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
             if (user == null)
             {
-                return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", req, requestModel);
+                return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", context, requestModel);
             }
 
             if (requestModel.ResponseType == "id_token")
             {
-                return await RedirectIdTokenToClientAppAsync(req, requestModel, tenant, user, client, scope);
+                return await RedirectIdTokenToClientAppAsync(context, requestModel, tenant, user, client, scope);
             }
             else if (requestModel.ResponseType == "code")
             {
@@ -150,33 +155,29 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                return RedirectToLogin("invalid_request", "Response type not supported", req, requestModel);
+                return RedirectToLogin("invalid_request", "Response type not supported", context, requestModel);
             }
         }
 
         [FunctionName(nameof(SignOut))]
-        public HttpResponseMessage SignOut(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequest req,
-            string tenantId)
+        public HttpResponseData SignOut(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req, FunctionExecutionContext context)
         {
             var model = req.BindModelToQuery<OidcLogoutRequestModel>();
 
             return RedirectToClientApp(model);
         }
 
-        private static HttpResponseMessage RedirectToLogin(string error, string errorDescription, HttpRequest req, OidcAuthorizeRequestModel requestModel)
-        {
-            var response = new HttpResponseMessage(HttpStatusCode.Found);
-            response.Headers.Location = new Uri(new Uri($"{req.Scheme}://{req.Host}{req.Path}"), $"?client_id={requestModel.ClientId}&redirect_uri={requestModel.RedirectUri}&scope={requestModel.Scope}&response_type={requestModel.ResponseType}&state={requestModel.State}&nonce={requestModel.Nonce}&error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}");
-            return response;
-        }
+        private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context, OidcAuthorizeRequestModel requestModel) 
+            => Response.Found(new Uri(new Uri(context.GetBaseUri()), 
+                $"?client_id={requestModel.ClientId}&redirect_uri={requestModel.RedirectUri}&scope={requestModel.Scope}&response_type={requestModel.ResponseType}&audience={requestModel.Audience}&state={requestModel.State}&nonce={requestModel.Nonce}&error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}"));
 
-        private async Task<HttpResponseMessage> RedirectIdTokenToClientAppAsync(HttpRequest req, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
+        private async Task<HttpResponseData> RedirectIdTokenToClientAppAsync(FunctionExecutionContext context, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
         {
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
             if (encryptionProvider == null)
             {
-                return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", req, requestModel);
+                return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context, requestModel);
             }
 
             var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
@@ -195,22 +196,15 @@ namespace DevOidc.Functions.Functions
                     default,
                     requestModel.RedirectUri);
 
-                var repsonse = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
-                };
-
-                return repsonse;
+                return Response.Html(FormView.RenderHtml(body));
             }
             else
             {
-                var response = new HttpResponseMessage(HttpStatusCode.Found);
-                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}id_token={idToken}&state={requestModel.State}");
-                return response;
+                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}id_token={idToken}&state={requestModel.State}"));;
             }
         }
 
-        private async Task<HttpResponseMessage> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience)
+        private async Task<HttpResponseData> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience)
         {
             var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
 
@@ -227,22 +221,15 @@ namespace DevOidc.Functions.Functions
                     default,
                     requestModel.RedirectUri);
 
-                var repsonse = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
-                };
-
-                return repsonse;
+                return Response.Html(FormView.RenderHtml(body));
             }
             else
             {
-                var response = new HttpResponseMessage(HttpStatusCode.Found);
-                response.Headers.Location = new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}&state={requestModel.State}");
-                return response;
+                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}&state={requestModel.State}"));
             }
         }
 
-        private HttpResponseMessage RedirectToClientApp(OidcLogoutRequestModel logoutModel)
+        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel)
         {
             var body = FormView.RenderForm(
                 new Dictionary<string, string?>
@@ -255,12 +242,7 @@ namespace DevOidc.Functions.Functions
                 logoutModel.LogoutRedirectUri,
                 method: "get");
 
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(FormView.RenderHtml(body), Encoding.UTF8, "text/html")
-            };
-
-            return response;
+            return Response.Html(FormView.RenderHtml(body));
         }
     }
 }

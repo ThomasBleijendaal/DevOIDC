@@ -1,37 +1,9 @@
 ﻿@inject NavigationManager Navigation
 
-<AuthorizeView>
-    <Authorized>
-        <h4>Hi!</h4>
+<h4>Hi!</h4>
 
-        <p>Redirecting...</p>
-    </Authorized>
-    <Authorizing>
-        <h4>Hi!</h4>
+<p>Please sign in to access the CMS.</p>
 
-        <p>Authorizing..</p>
-    </Authorizing>
-    <NotAuthorized>
-        <h4>Hi!</h4>
+<hr />
 
-        <p>Please sign in to access the CMS.</p>
-
-        <hr />
-
-        <a class="btn btn-primary" href="#" @onclick="BeginLogin">Login via Active Directory</a>
-    </NotAuthorized>
-</AuthorizeView>
-
-@if (action != null)
-{
-    <RemoteAuthenticatorView Action="@action" />
-}
-
-@code {
-    string? action;
-
-    private void BeginLogin(MouseEventArgs args)
-    {
-        action = "login";
-    }
-}
+<a class="btn btn-primary" href="/authentication/login">Login via Active Directory</a>
