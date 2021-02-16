@@ -52,13 +52,16 @@ namespace DevOidc.Cms.Core.Repositories
         public override async Task<TenantCmsModel?> InsertAsync(IEditContext<TenantCmsModel> editContext)
         {
             var user = _userResolver.ResolveUser();
+            editContext.Entity.OwnerName = user.Identity?.Name ?? "-unknown-";
+
             var tenantId = await _tenantManagementService.CreateTenantAsync(user.Identity?.Name ?? "-unknown-", editContext.Entity.MapToTenantDto());
             return await GetByIdAsync(tenantId, default);
         }
 
         public override Task<TenantCmsModel> NewAsync(IParent? parent, Type? variantType = null)
         {
-            return Task.FromResult(new TenantCmsModel { Id = Guid.NewGuid().ToString() });
+            var user = _userResolver.ResolveUser();
+            return Task.FromResult(new TenantCmsModel { Id = Guid.NewGuid().ToString(), OwnerName = user.Identity?.Name ?? "-unknown-" });
         }
 
         public override async Task UpdateAsync(IEditContext<TenantCmsModel> editContext)

@@ -15,13 +15,11 @@ namespace DevOidc.Functions.Resolvers
             _functionExecutionContextAccessor = functionExecutionContextAccessor;
         }
 
-        public ClaimsPrincipal ResolveUser()
-        {
-            return (_functionExecutionContextAccessor.FunctionExecutionContext != null &&
+        public ClaimsPrincipal ResolveUser() 
+            => (_functionExecutionContextAccessor.FunctionExecutionContext != null &&
                 _functionExecutionContextAccessor.FunctionExecutionContext.Items.TryGetValue(AuthenticationMiddleware.ContextUser, out var user)
                     ? user as ClaimsPrincipal
                     : default)
                 ?? throw new UnauthorizedAccessException();
-        }
     }
 }

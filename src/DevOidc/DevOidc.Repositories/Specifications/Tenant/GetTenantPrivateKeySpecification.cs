@@ -18,8 +18,8 @@ namespace DevOidc.Repositories.Specifications.Tenant
 
         public Func<TenantEntity, PrivateKeyDto> Projection => tenant => new PrivateKeyDto
         {
-            PrivateKey = Encoding.UTF8.GetString(Convert.FromBase64String(tenant.PrivateKey)),
-            PublicKey = Encoding.UTF8.GetString(Convert.FromBase64String(tenant.PublicKey))
+            PrivateKey = Encoding.UTF8.GetString(Convert.FromBase64String(tenant.PrivateKey ?? "")),
+            PublicKey = Encoding.UTF8.GetString(Convert.FromBase64String(tenant.PublicKey ?? ""))
         };
 
         public Expression<Func<TenantEntity, bool>> Criteria => tenant => tenant.RowKey == _tenantId;

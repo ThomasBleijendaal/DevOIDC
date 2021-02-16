@@ -15,9 +15,9 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.8.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
-    <PackageReference Include="RapidCMS.Api.Functions" Version="3.8.8-preview" />
-    <PackageReference Include="RapidCMS.Api.Core" Version="3.8.8-preview" />
-    <PackageReference Include="RapidCMS.Core" Version="3.8.3" />
+    <PackageReference Include="RapidCMS.Api.Functions" Version="3.8.9-preview" />
+    <PackageReference Include="RapidCMS.Api.Core" Version="3.8.9" />
+    <PackageReference Include="RapidCMS.Core" Version="3.8.9" />
     <PackageReference Include="HttpMultipartParser" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>

@@ -12,7 +12,7 @@ namespace DevOidc.Cms.Core.Models
     public class ClientCmsModel : IEntity
     {
         [MapWith(nameof(ClientDto.ClientId), IgnoreNullIncompatibility = true)]
-        public string Id { get; set; } = "";
+        public string? Id { get; set; } = "";
 
         [Required]
         public string Name { get; set; } = "";

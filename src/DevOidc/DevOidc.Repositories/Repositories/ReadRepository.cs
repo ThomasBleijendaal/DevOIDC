@@ -17,7 +17,7 @@ namespace DevOidc.Repositories.Repositories
 
         public async Task<TModel?> GetAsync<TModel>(ISpecification<TEntity, TModel> specification)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             await foreach (var element in table.QueryAsync(specification.Criteria).ConfigureAwait(false))
             {
@@ -29,7 +29,7 @@ namespace DevOidc.Repositories.Repositories
 
         public async Task<IReadOnlyList<TModel>> GetListAsync<TModel>(ISpecification<TEntity, TModel> specification)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             var result = new List<TModel>();
 
@@ -41,7 +41,7 @@ namespace DevOidc.Repositories.Repositories
             return result;
         }
 
-        private async Task<TableClient> GetTable()
+        private async Task<TableClient> GetTableAsync()
         {
             var table = _client.GetTableClient(typeof(TEntity).Name.ToLowerInvariant());
 

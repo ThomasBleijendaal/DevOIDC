@@ -19,7 +19,7 @@ namespace DevOidc.Repositories.Repositories
 
         public async Task CreateEntityAsync(ICreation<TEntity> creation)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             var newId = Guid.NewGuid();
 
@@ -38,18 +38,18 @@ namespace DevOidc.Repositories.Repositories
 
         public async Task ReinsertEntityAsync(IOperation<TEntity> operation)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
             {
-                await ReinsertEntity(operation, table, entity).ConfigureAwait(false);
+                await ReinsertEntityAsync(operation, table, entity).ConfigureAwait(false);
                 break;
             }
         }
 
         public async Task DeleteEntitiesAsync(ISelection<TEntity> selection)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             await foreach (var entity in table.QueryAsync(selection.Criteria).ConfigureAwait(false))
             {
@@ -59,26 +59,26 @@ namespace DevOidc.Repositories.Repositories
 
         public async Task UpdateSingleEntityAsync(IOperation<TEntity> operation)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
             {
-                await UpdateEntity(operation, table, entity).ConfigureAwait(false);
+                await UpdateEntityAsync(operation, table, entity).ConfigureAwait(false);
                 break;
             }
         }
 
         public async Task UpdateMultipleEntitiesAsync(IOperation<TEntity> operation)
         {
-            var table = await GetTable().ConfigureAwait(false);
+            var table = await GetTableAsync().ConfigureAwait(false);
 
             await foreach (var entity in table.QueryAsync(operation.Criteria).ConfigureAwait(false))
             {
-                await UpdateEntity(operation, table, entity).ConfigureAwait(false);
+                await UpdateEntityAsync(operation, table, entity).ConfigureAwait(false);
             }
         }
 
-        private static async Task UpdateEntity(IOperation<TEntity> operation, TableClient table, TEntity entity)
+        private static async Task UpdateEntityAsync(IOperation<TEntity> operation, TableClient table, TEntity entity)
         {
             operation.Mutation.Invoke(entity);
 
@@ -92,7 +92,7 @@ namespace DevOidc.Repositories.Repositories
             }
         }
 
-        private static async Task ReinsertEntity(IOperation<TEntity> operation, TableClient table, TEntity entity)
+        private static async Task ReinsertEntityAsync(IOperation<TEntity> operation, TableClient table, TEntity entity)
         {
             await table.DeleteEntityAsync(entity.PartitionKey, entity.RowKey, entity.ETag);
 
@@ -108,7 +108,7 @@ namespace DevOidc.Repositories.Repositories
             }
         }
 
-        private async Task<TableClient> GetTable()
+        private async Task<TableClient> GetTableAsync()
         {
             var table = _client.GetTableClient(typeof(TEntity).Name.ToLowerInvariant());
 

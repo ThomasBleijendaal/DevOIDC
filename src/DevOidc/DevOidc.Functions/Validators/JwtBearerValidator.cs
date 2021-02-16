@@ -115,8 +115,7 @@ namespace DevOidc.Functions.Validators
                 RequireHttps = instanceUri.Scheme == "https"
             };
 
-            var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
-            return configurationManager;
+            return new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
         }
 
         private string? GetAccessToken()

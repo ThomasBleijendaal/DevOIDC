@@ -44,7 +44,6 @@ namespace DevOidc.Business.Tenant
         public async Task<IReadOnlyList<UserDto>> GetAllUsersAsync(string tenantId)
             => await _readRepository.GetListAsync(new GetUsersByTenantIdSpecification(tenantId));
 
-
         public async Task UpdateUserAsync(string tenantId, string userId, UserDto user, bool resetPassword = false)
             => await _updateUserCommandHandler.HandleAsync(new UpdateUserCommand(tenantId, userId, user, resetPassword));
     }

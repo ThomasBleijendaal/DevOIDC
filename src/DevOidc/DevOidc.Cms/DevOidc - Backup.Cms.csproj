@@ -7,19 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="publish\**" />
-    <Content Remove="publish\**" />
-    <EmbeddedResource Remove="publish\**" />
-    <None Remove="publish\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="GeneratedMapper" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="5.0.3" />
-    <PackageReference Include="RapidCMS.Core" Version="3.8.9" />
-    <PackageReference Include="RapidCMS.UI" Version="3.8.9" />
+    <PackageReference Include="RapidCMS.Core" Version="3.8.3" />
+    <PackageReference Include="RapidCMS.UI" Version="3.8.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="5.0.0" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
   </ItemGroup>
