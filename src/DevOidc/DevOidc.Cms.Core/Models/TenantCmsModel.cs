@@ -14,7 +14,7 @@ namespace DevOidc.Cms.Models
         public string? Id { get; set; }
         public string Name { get; set; } = default!;
         public string OwnerName { get; set; } = default!;
-        public string? Description { get; set; } = default!;
+        public string Description { get; set; } = string.Empty;
         public TimeSpan TokenLifetime { get; set; } = TimeSpan.FromMinutes(5);
 
         [Ignore]
