@@ -200,7 +200,12 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}id_token={idToken}&state={requestModel.State}"));;
+                var data = $"id_token={idToken}";
+                if (!string.IsNullOrWhiteSpace(requestModel.State))
+                {
+                    data += $"&state={requestModel.State}";
+                }
+                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{data}"));;
             }
         }
 
@@ -225,7 +230,12 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}code={code}&state={requestModel.State}"));
+                var data = $"code={code}";
+                if (!string.IsNullOrWhiteSpace(requestModel.State))
+                {
+                    data += $"&state={requestModel.State}";
+                }
+                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{data}"));
             }
         }
 
