@@ -22,7 +22,7 @@ namespace DevOidc.Functions.Models.Request
         public IEnumerable<string> Scopes => Scope?.Split(' ') ?? Enumerable.Empty<string>();
 
         [JsonProperty("response_mode")]
-        public string? ResponseMode { get; set; } = "query";
+        public string? ResponseMode { get; set; } = "fragment";
 
         [JsonProperty("response_type")]
         public string? ResponseType { get; set; } = "code";

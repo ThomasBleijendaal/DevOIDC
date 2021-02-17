@@ -95,7 +95,6 @@ namespace DevOidc.Functions
 
             services.AddLogging(logging => logging.AddConsole());
 
-            // TODO: why is Core + Api.Core + Dependencies not automatically included?
             services.AddRapidCMSFunctions(config =>
             {
                 config.RegisterRepository<TenantCmsModel, TenantDto, TenantRepository>();
