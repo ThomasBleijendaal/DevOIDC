@@ -1,5 +1,8 @@
-﻿using Microsoft.Azure.Functions.Worker.Configuration;
+﻿using System;
+using Microsoft.Azure.Functions.Worker.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Authentication
@@ -45,6 +48,37 @@ namespace DevOidc.Functions.Authentication
                     accessor.FunctionExecutionContext = context;
 
                     return next(context);
+                };
+            });
+        }
+
+        public static IFunctionsWorkerApplicationBuilder UseRequestLogger(this IFunctionsWorkerApplicationBuilder builder)
+        {
+            return builder.Use(next =>
+            {
+                return async context =>
+                {
+                    await next(context);
+
+                    var logger = context.InstanceServices.GetRequiredService<ILogger<Program>>();
+
+                    try
+                    {
+                        var isHttp = context.InvocationRequest.TriggerMetadata.TryGetValue("req", out var request);
+
+                        if (isHttp)
+                        {
+                            var url = request.Http?.Url;
+                            var body = request.Http?.Body?.Json ?? request.Http?.Body?.Bytes.Length.ToString();
+                            var response = JsonConvert.SerializeObject(context.InvocationResult);
+
+                            logger.LogInformation("HTTP request: URL: {url} ||| BODY: {body} ||| RESPONSE: {response}", url, body, response);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Request logger failed");
+                    }
                 };
             });
         }

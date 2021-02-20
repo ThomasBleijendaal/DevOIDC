@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Web;
 using DevOidc.Business.Abstractions;
@@ -11,6 +12,7 @@ using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Responses;
 using DevOidc.Functions.Views;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
@@ -131,7 +133,7 @@ namespace DevOidc.Functions.Functions
                 await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
                 !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context, requestModel);
+                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context);
             }
 
             var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
@@ -142,7 +144,7 @@ namespace DevOidc.Functions.Functions
             var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
             if (user == null)
             {
-                return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", context, requestModel);
+                return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", context);
             }
 
             if (requestModel.ResponseType == "id_token")
@@ -151,12 +153,36 @@ namespace DevOidc.Functions.Functions
             }
             else if (requestModel.ResponseType == "code")
             {
-                return await RedirectCodeToClientAppAsync(requestModel, tenant, user, client, scope, audience);
+                return await RedirectCodeToClientAppAsync(requestModel, tenant, user, client, scope, audience, context);
             }
             else
             {
-                return RedirectToLogin("invalid_request", "Response type not supported", context, requestModel);
+                return RedirectToLogin("invalid_request", "Response type not supported", context);
             }
+        }
+
+        [FunctionName(nameof(AuthorizePostbackCallbackAsync))]
+        public async Task<HttpResponseData> AuthorizePostbackCallbackAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize/callback")] HttpRequestData req, FunctionExecutionContext context)
+        {
+            if (!req.Params.TryGetValue("tenantId", out var tenantId))
+            {
+                return Response.BadRequest();
+            }
+
+            var requestModel = req.BindModelToQuery<OidcAuthorizeCallbackRequestModel>();
+
+            if (string.IsNullOrWhiteSpace(requestModel.ClientId) ||
+                string.IsNullOrWhiteSpace(requestModel.RedirectUri) ||
+                string.IsNullOrWhiteSpace(requestModel.Scope) ||
+                await _tenantService.GetTenantAsync(tenantId) is not TenantDto tenant ||
+                await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
+                !client.RedirectUris.Contains(requestModel.RedirectUri))
+            {
+                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context);
+            }
+
+            return Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel)}");
         }
 
         [FunctionName(nameof(SignOut))]
@@ -168,16 +194,15 @@ namespace DevOidc.Functions.Functions
             return RedirectToClientApp(model);
         }
 
-        private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context, OidcAuthorizeRequestModel requestModel) 
-            => Response.Found(new Uri(new Uri(context.GetBaseUri()), 
-                $"?client_id={requestModel.ClientId}&redirect_uri={requestModel.RedirectUri}&scope={requestModel.Scope}&response_type={requestModel.ResponseType}&audience={requestModel.Audience}&state={requestModel.State}&nonce={requestModel.Nonce}&error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}"));
+        private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context)
+            => Response.Found(new Uri(new Uri(context.GetBaseUri()), $"?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}").ToString());
 
         private async Task<HttpResponseData> RedirectIdTokenToClientAppAsync(FunctionExecutionContext context, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
         {
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
             if (encryptionProvider == null)
             {
-                return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context, requestModel);
+                return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context);
             }
 
             var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
@@ -200,16 +225,11 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                var data = $"id_token={idToken}";
-                if (!string.IsNullOrWhiteSpace(requestModel.State))
-                {
-                    data += $"&state={requestModel.State}";
-                }
-                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{data}"));;
+                return Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel, $"id_token={idToken}")}");
             }
         }
 
-        private async Task<HttpResponseData> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience)
+        private async Task<HttpResponseData> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience, FunctionExecutionContext context)
         {
             var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
 
@@ -230,13 +250,63 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                var data = $"code={code}";
-                if (!string.IsNullOrWhiteSpace(requestModel.State))
-                {
-                    data += $"&state={requestModel.State}";
-                }
-                return Response.Found(new Uri(new Uri(requestModel.RedirectUri!), $"{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{data}"));
+                var body = FormView.RenderForm(
+                    new Dictionary<string, string?>
+                    {
+                        { "client_id", requestModel.ClientId },
+                        { "redirect_uri", requestModel.RedirectUri },
+                        { "code", code },
+                        { "scope", requestModel.Scope },
+                        { "state", requestModel.State },
+                        { "session_state", Guid.NewGuid().ToString() },
+                        { "response_mode", requestModel.ResponseMode }
+                    },
+                    new Dictionary<string, string>(),
+                    "Send code to application to resume flow",
+                    default,
+                    url: $"{context.GetBaseUri()}/callback",
+                    method: "get");
+
+                return Response.Html(FormView.RenderHtml(body));
             }
+        }
+
+        [Obsolete]
+        private static string GenerateQueryData(OidcAuthorizeRequestModel requestModel, string start)
+        {
+            var data = start;
+            if (!string.IsNullOrWhiteSpace(requestModel.State))
+            {
+                data += $"&state={requestModel.State}";
+            }
+            if (!string.IsNullOrWhiteSpace(requestModel.Scope))
+            {
+                data += $"&scope={HttpUtility.UrlEncode(requestModel.Scope)}";
+            }
+
+            data += $"&session_state={Guid.NewGuid()}";
+
+            return data;
+        }
+
+        private static string GenerateQueryData(OidcAuthorizeCallbackRequestModel requestModel)
+        {
+            var data = string.IsNullOrWhiteSpace(requestModel.Code)
+                ? $"code={requestModel.Code}"
+                : $"id_token={requestModel.IdToken}";
+
+            if (!string.IsNullOrWhiteSpace(requestModel.State))
+            {
+                data += $"&state={requestModel.State}";
+            }
+            if (!string.IsNullOrWhiteSpace(requestModel.Scope))
+            {
+                data += $"&scope={HttpUtility.UrlEncode(requestModel.Scope)}";
+            }
+
+            data += $"&session_state={requestModel.SessionState}";
+
+            return data;
         }
 
         private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel)

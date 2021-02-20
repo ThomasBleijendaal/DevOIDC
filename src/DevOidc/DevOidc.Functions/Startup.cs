@@ -105,6 +105,8 @@ namespace DevOidc.Functions
 
         public void ConfigureWorker(IFunctionsWorkerApplicationBuilder builder)
         {
+            builder.UseRequestLogger();
+
             builder.UseContextAccessor();
 
             builder.UseAuthentication();
