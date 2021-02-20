@@ -7,7 +7,7 @@ namespace DevOidc.Functions.Views
     {
         public static string RenderForm(
             IReadOnlyDictionary<string, string?> metadata,
-            IReadOnlyDictionary<string, string> inputs,
+            IReadOnlyDictionary<string, (string type, string? defaultValue)> inputs,
             string buttonText,
             string? messageText,
             string? url = null,
@@ -20,7 +20,7 @@ namespace DevOidc.Functions.Views
 {string.Join("\n", metadata.Select(kv => $@"<label>{kv.Key}</label><input readonly name=""{kv.Key}"" value=""{kv.Value}"" /><br />"))}
 </fieldset>
 <fieldset>
-{string.Join("\n", inputs.Select(kv => $@"<label>{kv.Key}</label><input name=""{kv.Key}"" type=""{kv.Value}"" /><br />"))}
+{string.Join("\n", inputs.Select(kv => $@"<label>{kv.Key}</label><input name=""{kv.Key}"" type=""{kv.Value.type}"" value=""{kv.Value.defaultValue}"" /><br />"))}
 <br />
 {(hasButton ? $@"<button type=""submit"">{buttonText}</button>" : "")}
 </fieldset>";

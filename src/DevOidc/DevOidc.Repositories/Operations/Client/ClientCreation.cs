@@ -19,6 +19,7 @@ namespace DevOidc.Repositories.Operations.Client
 
         public Action<ClientEntity> Mutation => client =>
         {
+            client.RowKey = _command.Client.ClientId;
             client.AccessTokenExtraClaims = JsonConvert.SerializeObject(_command.Client.AccessTokenExtraClaims);
             client.IdTokenExtraClaims = JsonConvert.SerializeObject(_command.Client.IdTokenExtraClaims);
             client.RedirectUris = JsonConvert.SerializeObject(_command.Client.RedirectUris);

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Newtonsoft.Json;
 
@@ -28,10 +27,10 @@ namespace DevOidc.Functions.Responses
         public static HttpResponseData Forbidden()
             => new HttpResponseData(HttpStatusCode.Forbidden);
 
-        public static HttpResponseData Found(Uri location)
+        public static HttpResponseData Found(string location)
         {
             var response = new HttpResponseData(HttpStatusCode.Found);
-            response.Headers.Add("Location", location.ToString());
+            response.Headers.Add("Location", location);
             return response;
         }
 

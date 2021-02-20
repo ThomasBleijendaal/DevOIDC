@@ -3,32 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
+using DevOidc.Cms.Core.Models;
 using DevOidc.Cms.Models;
 using DevOidc.Core.Models.Dtos;
-using DevOidc.Functions.Abstractions;
 using RapidCMS.Core.Abstractions.Data;
 using RapidCMS.Core.Abstractions.Forms;
+using RapidCMS.Core.Extensions;
 using RapidCMS.Core.Repositories;
 
 namespace DevOidc.Cms.Core.Repositories
 {
     public class UserRepository : BaseMappedRepository<UserCmsModel, UserDto>
     {
-        private readonly ITenantService _tenantService;
         private readonly IUserService _userService;
         private readonly IUserManagementService _userManagementService;
-        private readonly IUserResolver _userResolver;
+        private readonly IClientManagementService _clientManagementService;
 
         public UserRepository(
-            ITenantService tenantService,
             IUserService userService,
             IUserManagementService userManagementService,
-            IUserResolver userResolver)
+            IClientManagementService clientManagementService)
         {
-            _tenantService = tenantService;
             _userService = userService;
             _userManagementService = userManagementService;
-            _userResolver = userResolver;
+            _clientManagementService = clientManagementService;
         }
 
         public override async Task DeleteAsync(string id, IParent? parent)
@@ -70,13 +68,32 @@ namespace DevOidc.Cms.Core.Repositories
                 return default;
             }
 
-            var userId = await _userManagementService.CreateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.MapToUserDto());
+            var user = editContext.Entity.MapToUserDto();
+
+            var clientIds = editContext.GetRelationContainer().GetRelatedElementIdsFor<ClientCmsModel, string>()?.ToList();
+            if (clientIds != null)
+            {
+                user.Clients = clientIds;
+            }
+
+            var userId = await _userManagementService.CreateUserAsync(editContext.Parent.Entity.Id, user);
             return await GetByIdAsync(userId, editContext.Parent);
         }
 
-        public override Task<UserCmsModel> NewAsync(IParent? parent, Type? variantType = null)
+        public override async Task<UserCmsModel> NewAsync(IParent? parent, Type? variantType = null)
         {
-            return Task.FromResult(new UserCmsModel { });
+            if (string.IsNullOrWhiteSpace(parent?.Entity.Id))
+            {
+                return new UserCmsModel();
+            }
+
+            var clients = await _clientManagementService.GetAllClientsAsync(parent.Entity.Id);
+
+            return new UserCmsModel
+            {
+                Id = Guid.NewGuid().ToString(),
+                Clients = clients.ToList(x => x.ClientId)
+            };
         }
 
         public override async Task UpdateAsync(IEditContext<UserCmsModel> editContext)
@@ -87,7 +104,15 @@ namespace DevOidc.Cms.Core.Repositories
                 return;
             }
 
-            await _userManagementService.UpdateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.Id, editContext.Entity.MapToUserDto(), editContext.Entity.Password == "reset");
+            var user = editContext.Entity.MapToUserDto();
+
+            var clientIds = editContext.GetRelationContainer().GetRelatedElementIdsFor<ClientCmsModel, string>()?.ToList();
+            if (clientIds != null)
+            {
+                user.Clients = clientIds;
+            }
+
+            await _userManagementService.UpdateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.Id, user, editContext.Entity.ResetPassword);
         }
     }
 }

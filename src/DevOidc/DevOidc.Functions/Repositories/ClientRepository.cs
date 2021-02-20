@@ -66,7 +66,7 @@ namespace DevOidc.Cms.Core.Repositories
 
         public override Task<ClientCmsModel> NewAsync(IParent? parent, Type? variantType = null)
         {
-            return Task.FromResult(new ClientCmsModel { });
+            return Task.FromResult(new ClientCmsModel { Id = Guid.NewGuid().ToString() });
         }
 
         public override async Task UpdateAsync(IEditContext<ClientCmsModel> editContext)
