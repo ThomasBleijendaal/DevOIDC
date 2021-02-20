@@ -44,7 +44,7 @@ namespace DevOidc.Functions.Functions
 
         [FunctionName(nameof(AuthorizeAsync))]
         public async Task<HttpResponseData> AuthorizeAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequestData req, FunctionExecutionContext context)
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequestData req)
         {
             if (!req.Params.TryGetValue("tenantId", out var tenantId))
             {
@@ -64,7 +64,6 @@ namespace DevOidc.Functions.Functions
                 _ => default
             };
 
-            string body;
             if (string.IsNullOrWhiteSpace(requestModel.ClientId))
             {
                 message = FormView.Error($"Missing <code>client_id</code>.");
@@ -90,27 +89,7 @@ namespace DevOidc.Functions.Functions
                 message = FormView.Error($"Client <code>{requestModel.ClientId}</code> only supports <code>response_type=form_post</code> or <code>response_type=fragment</code> or <code>response_type=query</code>.");
             }
 
-            body = FormView.RenderForm(
-                new Dictionary<string, string?>
-                {
-                    { "client_id", requestModel.ClientId },
-                    { "redirect_uri", requestModel.RedirectUri },
-                    { "scope", requestModel.Scope },
-                    { "audience", requestModel.Audience },
-                    { "response_mode", requestModel.ResponseMode },
-                    { "response_type", requestModel.ResponseType },
-                    { "state", requestModel.State },
-                    { "nonce", requestModel.Nonce },
-                },
-                new Dictionary<string, string>
-                {
-                    { "username", "text" },
-                    { "password", "password" }
-                },
-                "Sign in",
-                message);
-
-            return Response.Html(FormView.RenderHtml(body));
+            return Response.Html(FormView.RenderHtml(LogInForm(requestModel, message)));
         }
 
         [FunctionName(nameof(AuthorizePostbackAsync))]
@@ -187,12 +166,8 @@ namespace DevOidc.Functions.Functions
 
         [FunctionName(nameof(SignOut))]
         public HttpResponseData SignOut(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req, FunctionExecutionContext context)
-        {
-            var model = req.BindModelToQuery<OidcLogoutRequestModel>();
-
-            return RedirectToClientApp(model);
-        }
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req) 
+            => RedirectToClientApp(req.BindModelToQuery<OidcLogoutRequestModel>());
 
         private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context)
             => Response.Found(new Uri(new Uri(context.GetBaseUri()), $"?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}").ToString());
@@ -208,85 +183,18 @@ namespace DevOidc.Functions.Functions
             var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
             var idToken = _jwtProvider.CreateJwt(idTokenClaims, tenant.TokenLifetime, encryptionProvider);
 
-            if (requestModel.ResponseMode == "form_post")
-            {
-                var body = FormView.RenderForm(
-                    new Dictionary<string, string?>
-                    {
-                        { "state", requestModel.State },
-                        { "id_token", idToken },
-                    },
-                    new Dictionary<string, string>(),
-                    "Send code to application to resume flow",
-                    default,
-                    requestModel.RedirectUri);
-
-                return Response.Html(FormView.RenderHtml(body));
-            }
-            else
-            {
-                return Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel, $"id_token={idToken}")}");
-            }
+            return requestModel.ResponseMode == "form_post"
+                ? PostToReplyUrlForm(requestModel, "id_token", idToken)
+                : PostToCallbackUrlForm(requestModel, context, "id_token", idToken);
         }
 
         private async Task<HttpResponseData> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience, FunctionExecutionContext context)
         {
             var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
 
-            if (requestModel.ResponseMode == "form_post")
-            {
-                var body = FormView.RenderForm(
-                    new Dictionary<string, string?>
-                    {
-                        { "state", requestModel.State },
-                        { "code", code },
-                    },
-                    new Dictionary<string, string>(),
-                    "Send code to application to resume flow",
-                    default,
-                    requestModel.RedirectUri);
-
-                return Response.Html(FormView.RenderHtml(body));
-            }
-            else
-            {
-                var body = FormView.RenderForm(
-                    new Dictionary<string, string?>
-                    {
-                        { "client_id", requestModel.ClientId },
-                        { "redirect_uri", requestModel.RedirectUri },
-                        { "code", code },
-                        { "scope", requestModel.Scope },
-                        { "state", requestModel.State },
-                        { "session_state", Guid.NewGuid().ToString() },
-                        { "response_mode", requestModel.ResponseMode }
-                    },
-                    new Dictionary<string, string>(),
-                    "Send code to application to resume flow",
-                    default,
-                    url: $"{context.GetBaseUri()}/callback",
-                    method: "get");
-
-                return Response.Html(FormView.RenderHtml(body));
-            }
-        }
-
-        [Obsolete]
-        private static string GenerateQueryData(OidcAuthorizeRequestModel requestModel, string start)
-        {
-            var data = start;
-            if (!string.IsNullOrWhiteSpace(requestModel.State))
-            {
-                data += $"&state={requestModel.State}";
-            }
-            if (!string.IsNullOrWhiteSpace(requestModel.Scope))
-            {
-                data += $"&scope={HttpUtility.UrlEncode(requestModel.Scope)}";
-            }
-
-            data += $"&session_state={Guid.NewGuid()}";
-
-            return data;
+            return requestModel.ResponseMode == "form_post"
+                ? PostToReplyUrlForm(requestModel, "code", code)
+                : PostToCallbackUrlForm(requestModel, context, "code", code);
         }
 
         private static string GenerateQueryData(OidcAuthorizeCallbackRequestModel requestModel)
@@ -309,9 +217,19 @@ namespace DevOidc.Functions.Functions
             return data;
         }
 
-        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel)
-        {
-            var body = FormView.RenderForm(
+        private static string LogInForm(OidcAuthorizeRequestModel requestModel, string? message)
+            => FormView.RenderForm(
+                requestModel.LogInFormData(),
+                new Dictionary<string, string>
+                {
+                    { "username", "text" },
+                    { "password", "password" }
+                },
+                "Sign in",
+                message);
+
+        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel) 
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
                 new Dictionary<string, string?>
                 {
                     { "state", logoutModel.State }
@@ -320,9 +238,37 @@ namespace DevOidc.Functions.Functions
                 "Click to sign out",
                 string.IsNullOrWhiteSpace(logoutModel.LogoutRedirectUri) ? "Redirect Url is empty!" : default,
                 logoutModel.LogoutRedirectUri,
-                method: "get");
+                method: "get")));
 
-            return Response.Html(FormView.RenderHtml(body));
-        }
+        private static HttpResponseData PostToCallbackUrlForm(OidcAuthorizeRequestModel requestModel, FunctionExecutionContext context, string type, string value) 
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "client_id", requestModel.ClientId },
+                    { "redirect_uri", requestModel.RedirectUri },
+                    { type, value },
+                    { "scope", requestModel.Scope },
+                    { "state", requestModel.State },
+                    { "session_state", Guid.NewGuid().ToString() },
+                    { "response_mode", requestModel.ResponseMode }
+                },
+                new Dictionary<string, string>(),
+                $"Send {type} to application to resume flow",
+                default,
+                url: $"{context.GetBaseUri()}/callback",
+                method: "get")));
+
+        private static HttpResponseData PostToReplyUrlForm(OidcAuthorizeRequestModel requestModel, string type, string value)
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "state", requestModel.State },
+                    { type, value },
+                },
+                new Dictionary<string, string>(),
+                $"Send {type} to application to resume flow",
+                default,
+                requestModel.RedirectUri)));
+
     }
 }

@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Models.Request
 {
-
     public class OidcAuthorizeRequestModel : OidcRequestModel
     {
         [JsonProperty("audience")]
@@ -30,5 +29,18 @@ namespace DevOidc.Functions.Models.Request
 
         [JsonProperty("prompt")]
         public string? Prompt { get; set; }
+
+        public IReadOnlyDictionary<string, string?> LogInFormData() =>
+            new Dictionary<string, string?>
+            {
+                { "client_id", ClientId },
+                { "redirect_uri", RedirectUri },
+                { "scope", Scope },
+                { "audience", Audience },
+                { "response_mode", ResponseMode },
+                { "response_type", ResponseType },
+                { "state", State },
+                { "nonce", Nonce }
+            };
     }
 }
