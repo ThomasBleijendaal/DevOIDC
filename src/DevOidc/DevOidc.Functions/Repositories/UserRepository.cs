@@ -9,27 +9,25 @@ using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Abstractions;
 using RapidCMS.Core.Abstractions.Data;
 using RapidCMS.Core.Abstractions.Forms;
+using RapidCMS.Core.Extensions;
 using RapidCMS.Core.Repositories;
 
 namespace DevOidc.Cms.Core.Repositories
 {
     public class UserRepository : BaseMappedRepository<UserCmsModel, UserDto>
     {
-        private readonly ITenantService _tenantService;
         private readonly IUserService _userService;
         private readonly IUserManagementService _userManagementService;
-        private readonly IUserResolver _userResolver;
+        private readonly IClientManagementService _clientManagementService;
 
         public UserRepository(
-            ITenantService tenantService,
             IUserService userService,
             IUserManagementService userManagementService,
-            IUserResolver userResolver)
+            IClientManagementService clientManagementService)
         {
-            _tenantService = tenantService;
             _userService = userService;
             _userManagementService = userManagementService;
-            _userResolver = userResolver;
+            _clientManagementService = clientManagementService;
         }
 
         public override async Task DeleteAsync(string id, IParent? parent)
@@ -83,9 +81,20 @@ namespace DevOidc.Cms.Core.Repositories
             return await GetByIdAsync(userId, editContext.Parent);
         }
 
-        public override Task<UserCmsModel> NewAsync(IParent? parent, Type? variantType = null)
+        public override async Task<UserCmsModel> NewAsync(IParent? parent, Type? variantType = null)
         {
-            return Task.FromResult(new UserCmsModel { Id = Guid.NewGuid().ToString() });
+            if (string.IsNullOrWhiteSpace(parent?.Entity.Id))
+            {
+                return new UserCmsModel();
+            }
+
+            var clients = await _clientManagementService.GetAllClientsAsync(parent.Entity.Id);
+
+            return new UserCmsModel
+            {
+                Id = Guid.NewGuid().ToString(),
+                Clients = clients.ToList(x => x.ClientId)
+            };
         }
 
         public override async Task UpdateAsync(IEditContext<UserCmsModel> editContext)
