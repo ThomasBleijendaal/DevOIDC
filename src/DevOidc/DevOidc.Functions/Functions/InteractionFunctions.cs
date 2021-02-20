@@ -119,7 +119,7 @@ namespace DevOidc.Functions.Functions
                 await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
                 !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context);
+                return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect configuration was posted to callback.", requestModel);
             }
 
             var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
@@ -130,7 +130,7 @@ namespace DevOidc.Functions.Functions
             var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
             if (user == null)
             {
-                return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", context);
+                return RedirectToLogin(context, tenantId, "invalid_login", "Username or password is incorrect, or user does not have access to this client.", requestModel);
             }
 
             var type = requestModel.ResponseType;
@@ -140,7 +140,7 @@ namespace DevOidc.Functions.Functions
                 var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
                 if (encryptionProvider == null)
                 {
-                    return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context);
+                    return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect encryption provider for tentant", requestModel);
                 }
 
                 var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
@@ -152,7 +152,7 @@ namespace DevOidc.Functions.Functions
             }
             else
             {
-                return RedirectToLogin("invalid_request", "Response type not supported", context);
+                return RedirectToLogin(context, tenantId, "invalid_request", "Response type not supported", requestModel);
             }
 
             var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(requestModel, type, value)
@@ -186,7 +186,7 @@ namespace DevOidc.Functions.Functions
                 await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
                 !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context);
+                return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect configuration was posted to callback.", requestModel);
             }
 
             var type = string.IsNullOrWhiteSpace(requestModel.Code) ? "id_token" : "code";
@@ -200,8 +200,11 @@ namespace DevOidc.Functions.Functions
             [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req)
             => RedirectToClientApp(req.BindModelToQuery<OidcLogoutRequestModel>());
 
-        private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context)
-            => Response.Found(new Uri(new Uri(context.GetBaseUri()), $"?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}").ToString());
+        private static HttpResponseData RedirectToLogin(FunctionExecutionContext context, string tenantId, string error, string errorDescription, OidcRequestModel request)
+            => Response.Found($"{context.GetBaseUri(tenantId)}{tenantId}/authorize?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}&{GenerateOidcData(request)}");
+
+        private static string GenerateOidcData(OidcRequestModel m)
+            => $"client_id={m.ClientId}&scope={m.Scope}&redirect_uri={HttpUtility.UrlEncode(m.RedirectUri)}&response_type={m.ResponseType}&response_mode={m.ResponseMode}";
 
         private static string LogInForm(OidcAuthorizeRequestModel requestModel, string? message, string? userName)
             => FormView.RenderForm(

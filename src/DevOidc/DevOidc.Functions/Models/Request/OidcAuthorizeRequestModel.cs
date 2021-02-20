@@ -12,9 +12,6 @@ namespace DevOidc.Functions.Models.Request
         [JsonIgnore]
         public IEnumerable<string> Scopes => Scope?.Split(' ') ?? Enumerable.Empty<string>();
 
-        [JsonProperty("response_type")]
-        public string? ResponseType { get; set; } = "code";
-
         [JsonProperty("error")]
         public string? Error { get; set; }
 

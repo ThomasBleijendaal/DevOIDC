@@ -16,6 +16,9 @@ namespace DevOidc.Functions.Models.Request
         [JsonProperty("response_mode")]
         public string? ResponseMode { get; set; } = "query";
 
+        [JsonProperty("response_type")]
+        public string? ResponseType { get; set; } = "code";
+
         [JsonProperty("state")]
         public string? State { get; set; }
 
