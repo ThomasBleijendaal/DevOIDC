@@ -19,6 +19,7 @@ namespace DevOidc.Repositories.Operations.Tenant
 
         public Action<TenantEntity> Mutation => tenant =>
         {
+            tenant.RowKey = _command.Tenant.TenantId;
             tenant.Name = _command.Tenant.Name;
             tenant.Description = _command.Tenant.Description;
             tenant.TokenLifetime = _command.Tenant.TokenLifetime.ToString();

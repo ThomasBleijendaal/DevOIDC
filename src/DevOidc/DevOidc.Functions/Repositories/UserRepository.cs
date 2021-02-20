@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
+using DevOidc.Cms.Core.Models;
 using DevOidc.Cms.Models;
 using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Abstractions;
@@ -70,13 +71,21 @@ namespace DevOidc.Cms.Core.Repositories
                 return default;
             }
 
-            var userId = await _userManagementService.CreateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.MapToUserDto());
+            var user = editContext.Entity.MapToUserDto();
+
+            var clientIds = editContext.GetRelationContainer().GetRelatedElementIdsFor<ClientCmsModel, string>()?.ToList();
+            if (clientIds != null)
+            {
+                user.Clients = clientIds;
+            }
+
+            var userId = await _userManagementService.CreateUserAsync(editContext.Parent.Entity.Id, user);
             return await GetByIdAsync(userId, editContext.Parent);
         }
 
         public override Task<UserCmsModel> NewAsync(IParent? parent, Type? variantType = null)
         {
-            return Task.FromResult(new UserCmsModel { });
+            return Task.FromResult(new UserCmsModel { Id = Guid.NewGuid().ToString() });
         }
 
         public override async Task UpdateAsync(IEditContext<UserCmsModel> editContext)
@@ -87,7 +96,15 @@ namespace DevOidc.Cms.Core.Repositories
                 return;
             }
 
-            await _userManagementService.UpdateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.Id, editContext.Entity.MapToUserDto(), editContext.Entity.Password == "reset");
+            var user = editContext.Entity.MapToUserDto();
+
+            var clientIds = editContext.GetRelationContainer().GetRelatedElementIdsFor<ClientCmsModel, string>()?.ToList();
+            if (clientIds != null)
+            {
+                user.Clients = clientIds;
+            }
+
+            await _userManagementService.UpdateUserAsync(editContext.Parent.Entity.Id, editContext.Entity.Id, user, editContext.Entity.ResetPassword);
         }
     }
 }

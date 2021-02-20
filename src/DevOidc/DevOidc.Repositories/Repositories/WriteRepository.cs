@@ -21,19 +21,21 @@ namespace DevOidc.Repositories.Repositories
         {
             var table = await GetTableAsync().ConfigureAwait(false);
 
-            var newId = Guid.NewGuid();
-
             var entity = new TEntity
             {
-                RowKey = newId.ToString(),
                 PartitionKey = creation.PartitionKey.ToString()
             };
 
             creation.Mutation.Invoke(entity);
 
+            if (string.IsNullOrEmpty(entity.RowKey))
+            {
+                entity.RowKey = Guid.NewGuid().ToString();
+            }
+
             await table.AddEntityAsync(entity).ConfigureAwait(false);
 
-            creation.CreatedId = newId.ToString();
+            creation.CreatedId = entity.RowKey;
         }
 
         public async Task ReinsertEntityAsync(IOperation<TEntity> operation)

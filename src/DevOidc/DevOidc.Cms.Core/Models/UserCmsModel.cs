@@ -11,6 +11,8 @@ namespace DevOidc.Cms.Models
     public class UserCmsModel : IEntity
     {
         [MapWith(nameof(UserDto.UserId), IgnoreNullIncompatibility = true)]
+        [Required]
+        [RegularExpression("^[A-Za-z0-9-_\\.]*$")]
         public string? Id { get; set; } = "";
 
         [Required]

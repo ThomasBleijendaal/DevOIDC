@@ -100,7 +100,7 @@ namespace DevOidc.Cms
 
                         x.AddSection(section =>
                         {
-                            section.AddField(x => x.Id).SetName("Tenant Id").SetType(DisplayType.Pre);
+                            section.AddField(x => x.Id).SetName("Tenant Id").DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
                             
                             section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}/.well-known/openid-configuration").SetType(DisplayType.Pre).SetName("Metadata endpoint");
@@ -157,7 +157,7 @@ namespace DevOidc.Cms
 
                             x.AddSection(section =>
                             {
-                                section.AddField(x => x.Id).SetName("User Id").SetType(DisplayType.Pre);
+                                section.AddField(x => x.Id).SetName("User Id").DisableWhen((m, s) => s == EntityState.IsExisting);
                                 section.AddField(x => x.FullName).SetName("Full name");
                                 section.AddField(x => x.UserName).SetName("User name");
                                 section.AddField(x => x.Password).DisableWhen((m, e) => true);
@@ -216,7 +216,7 @@ namespace DevOidc.Cms
 
                             x.AddSection(section =>
                             {
-                                section.AddField(x => x.Id).SetName("Client Id").SetType(DisplayType.Pre);
+                                section.AddField(x => x.Id).SetName("Client Id").DisableWhen((m, s) => s == EntityState.IsExisting);
                                 section.AddField(x => x.Name);
                                 section.AddField(x => x.AccessTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in Access Token");
                                 section.AddField(x => x.IdTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in ID Token");
