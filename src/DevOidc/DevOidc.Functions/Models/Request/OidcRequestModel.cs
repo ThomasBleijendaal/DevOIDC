@@ -18,5 +18,8 @@ namespace DevOidc.Functions.Models.Request
 
         [JsonProperty("state")]
         public string? State { get; set; }
+
+        [JsonProperty("session_state")]
+        public string? SessionState { get; set; }
     }
 }

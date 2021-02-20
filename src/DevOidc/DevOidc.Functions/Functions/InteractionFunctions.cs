@@ -51,6 +51,13 @@ namespace DevOidc.Functions.Functions
                 return Response.BadRequest();
             }
 
+            var userName = default(string);
+            if (req.Headers.TryGetValue("cookie", out var cookies))
+            {
+                var userNameCookie = cookies.Split(";", StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(x => x.StartsWith("username"));
+                userName = userNameCookie?.Replace("username=", "").Trim();
+            }
+
             var requestModel = req.BindModelToQuery<OidcAuthorizeRequestModel>();
             if (requestModel.Prompt == "none")
             {
@@ -89,7 +96,7 @@ namespace DevOidc.Functions.Functions
                 message = FormView.Error($"Client <code>{requestModel.ClientId}</code> only supports <code>response_type=form_post</code> or <code>response_type=fragment</code> or <code>response_type=query</code>.");
             }
 
-            return Response.Html(FormView.RenderHtml(LogInForm(requestModel, message)));
+            return Response.Html(FormView.RenderHtml(LogInForm(requestModel, message, userName)));
         }
 
         [FunctionName(nameof(AuthorizePostbackAsync))]
@@ -126,18 +133,39 @@ namespace DevOidc.Functions.Functions
                 return RedirectToLogin("invalid_login", "Username or password is incorrect, or user does not have access to this client.", context);
             }
 
-            if (requestModel.ResponseType == "id_token")
+            var type = requestModel.ResponseType;
+            var value = default(string);
+            if (type == "id_token")
             {
-                return await RedirectIdTokenToClientAppAsync(context, requestModel, tenant, user, client, scope);
+                var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
+                if (encryptionProvider == null)
+                {
+                    return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context);
+                }
+
+                var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
+                value = _jwtProvider.CreateJwt(idTokenClaims, tenant.TokenLifetime, encryptionProvider);
             }
-            else if (requestModel.ResponseType == "code")
+            else if (type == "code")
             {
-                return await RedirectCodeToClientAppAsync(requestModel, tenant, user, client, scope, audience, context);
+                value = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
             }
             else
             {
                 return RedirectToLogin("invalid_request", "Response type not supported", context);
             }
+
+            var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(requestModel, type, value)
+
+                // web sites etc
+                : (requestModel.RedirectUri?.StartsWith("http") ?? false) ? RedirectToReplyUrl(requestModel, type, value)
+
+                // native clients 
+                : PostToCallbackUrlForm(requestModel, context, type, value);
+
+            response.Headers.Add("Set-Cookie", $"username={requestModel.UserName}");
+
+            return response;
         }
 
         [FunctionName(nameof(AuthorizePostbackCallbackAsync))]
@@ -161,47 +189,79 @@ namespace DevOidc.Functions.Functions
                 return RedirectToLogin("invalid_request", "Incorrect configuration was posted to callback.", context);
             }
 
-            return Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel)}");
+            var type = string.IsNullOrWhiteSpace(requestModel.Code) ? "id_token" : "code";
+            var value = type == "id_token" ? requestModel.IdToken : requestModel.Code;
+
+            return RedirectToReplyUrl(requestModel, type, value);
         }
 
         [FunctionName(nameof(SignOut))]
         public HttpResponseData SignOut(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req) 
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req)
             => RedirectToClientApp(req.BindModelToQuery<OidcLogoutRequestModel>());
 
         private static HttpResponseData RedirectToLogin(string error, string errorDescription, FunctionExecutionContext context)
             => Response.Found(new Uri(new Uri(context.GetBaseUri()), $"?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}").ToString());
 
-        private async Task<HttpResponseData> RedirectIdTokenToClientAppAsync(FunctionExecutionContext context, OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope)
+        private static string LogInForm(OidcAuthorizeRequestModel requestModel, string? message, string? userName)
+            => FormView.RenderForm(
+                requestModel.LogInFormData(),
+                new Dictionary<string, (string, string?)>
+                {
+                    { "username", ("text", userName) },
+                    { "password", ("password", null) }
+                },
+                "Sign in",
+                message);
+
+        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel)
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "state", logoutModel.State }
+                },
+                new Dictionary<string, (string, string?)>(),
+                "Click to sign out",
+                string.IsNullOrWhiteSpace(logoutModel.LogoutRedirectUri) ? "Redirect Url is empty!" : default,
+                logoutModel.LogoutRedirectUri,
+                method: "get")));
+
+        private static HttpResponseData PostToCallbackUrlForm(OidcAuthorizeRequestModel requestModel, FunctionExecutionContext context, string type, string? value)
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "client_id", requestModel.ClientId },
+                    { "redirect_uri", requestModel.RedirectUri },
+                    { type, value },
+                    { "scope", requestModel.Scope },
+                    { "state", requestModel.State },
+                    { "session_state", Guid.NewGuid().ToString() },
+                    { "response_mode", requestModel.ResponseMode }
+                },
+                new Dictionary<string, (string, string?)>(),
+                $"Send {type} to application to resume flow",
+                default,
+                url: $"{context.GetBaseUri()}/callback",
+                method: "get")));
+
+        private static HttpResponseData PostToReplyUrlForm(OidcAuthorizeRequestModel requestModel, string type, string? value)
+            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+                new Dictionary<string, string?>
+                {
+                    { "state", requestModel.State },
+                    { type, value },
+                },
+                new Dictionary<string, (string, string?)>(),
+                $"Send {type} to application to resume flow",
+                default,
+                requestModel.RedirectUri)));
+
+        private static HttpResponseData RedirectToReplyUrl(OidcRequestModel requestModel, string type, string? value)
+            => Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel, type, value)}");
+
+        private static string GenerateQueryData(OidcRequestModel requestModel, string type, string? value)
         {
-            var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
-            if (encryptionProvider == null)
-            {
-                return RedirectToLogin("invalid_request", "Incorrect encryption provider for tentant", context);
-            }
-
-            var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
-            var idToken = _jwtProvider.CreateJwt(idTokenClaims, tenant.TokenLifetime, encryptionProvider);
-
-            return requestModel.ResponseMode == "form_post"
-                ? PostToReplyUrlForm(requestModel, "id_token", idToken)
-                : PostToCallbackUrlForm(requestModel, context, "id_token", idToken);
-        }
-
-        private async Task<HttpResponseData> RedirectCodeToClientAppAsync(OidcAuthorizeRequestModel requestModel, TenantDto tenant, UserDto user, ClientDto client, ScopeDto scope, string audience, FunctionExecutionContext context)
-        {
-            var code = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
-
-            return requestModel.ResponseMode == "form_post"
-                ? PostToReplyUrlForm(requestModel, "code", code)
-                : PostToCallbackUrlForm(requestModel, context, "code", code);
-        }
-
-        private static string GenerateQueryData(OidcAuthorizeCallbackRequestModel requestModel)
-        {
-            var data = string.IsNullOrWhiteSpace(requestModel.Code)
-                ? $"code={requestModel.Code}"
-                : $"id_token={requestModel.IdToken}";
+            var data = $"{type}={value}";
 
             if (!string.IsNullOrWhiteSpace(requestModel.State))
             {
@@ -216,59 +276,5 @@ namespace DevOidc.Functions.Functions
 
             return data;
         }
-
-        private static string LogInForm(OidcAuthorizeRequestModel requestModel, string? message)
-            => FormView.RenderForm(
-                requestModel.LogInFormData(),
-                new Dictionary<string, string>
-                {
-                    { "username", "text" },
-                    { "password", "password" }
-                },
-                "Sign in",
-                message);
-
-        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel) 
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
-                new Dictionary<string, string?>
-                {
-                    { "state", logoutModel.State }
-                },
-                new Dictionary<string, string>(),
-                "Click to sign out",
-                string.IsNullOrWhiteSpace(logoutModel.LogoutRedirectUri) ? "Redirect Url is empty!" : default,
-                logoutModel.LogoutRedirectUri,
-                method: "get")));
-
-        private static HttpResponseData PostToCallbackUrlForm(OidcAuthorizeRequestModel requestModel, FunctionExecutionContext context, string type, string value) 
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
-                new Dictionary<string, string?>
-                {
-                    { "client_id", requestModel.ClientId },
-                    { "redirect_uri", requestModel.RedirectUri },
-                    { type, value },
-                    { "scope", requestModel.Scope },
-                    { "state", requestModel.State },
-                    { "session_state", Guid.NewGuid().ToString() },
-                    { "response_mode", requestModel.ResponseMode }
-                },
-                new Dictionary<string, string>(),
-                $"Send {type} to application to resume flow",
-                default,
-                url: $"{context.GetBaseUri()}/callback",
-                method: "get")));
-
-        private static HttpResponseData PostToReplyUrlForm(OidcAuthorizeRequestModel requestModel, string type, string value)
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
-                new Dictionary<string, string?>
-                {
-                    { "state", requestModel.State },
-                    { type, value },
-                },
-                new Dictionary<string, string>(),
-                $"Send {type} to application to resume flow",
-                default,
-                requestModel.RedirectUri)));
-
     }
 }

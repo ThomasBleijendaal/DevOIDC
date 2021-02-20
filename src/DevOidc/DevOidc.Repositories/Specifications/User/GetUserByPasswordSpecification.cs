@@ -22,7 +22,7 @@ namespace DevOidc.Repositories.Specifications.User
 
         public Expression<Func<UserEntity, bool>> Criteria => user =>
             user.PartitionKey == _tenantId &&
-            user.UserName == _userName &&
+            _userName.Equals(user.UserName, StringComparison.InvariantCultureIgnoreCase) &&
             user.Password == _password;
     }
 }

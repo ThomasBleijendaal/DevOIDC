@@ -69,10 +69,11 @@ namespace DevOidc.Functions.Authentication
                         if (isHttp)
                         {
                             var url = request.Http?.Url;
+                            var headers = request.Http?.Headers;
                             var body = request.Http?.Body?.Json ?? request.Http?.Body?.Bytes.Length.ToString();
                             var response = JsonConvert.SerializeObject(context.InvocationResult);
 
-                            logger.LogInformation("HTTP request: URL: {url} ||| BODY: {body} ||| RESPONSE: {response}", url, body, response);
+                            logger.LogInformation("HTTP request: URL: {url} ||| HEADERS: {headers} ||| BODY: {body} ||| RESPONSE: {response}", url, headers, body, response);
                         }
                     }
                     catch (Exception ex)
