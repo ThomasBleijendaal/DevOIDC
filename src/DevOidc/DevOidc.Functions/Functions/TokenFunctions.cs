@@ -1,12 +1,13 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using DevOidc.Business.Abstractions;
+using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
 using DevOidc.Functions.Responses;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Pipeline;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 
@@ -35,9 +36,9 @@ namespace DevOidc.Functions.Functions
             _scopeProvider = scopeProvider;
         }
 
-        [FunctionName(nameof(GetTokenByCodeAsync))]
-        public async Task<HttpResponseData> GetTokenByCodeAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequestData req, FunctionExecutionContext context)
+        [FunctionName(nameof(GetTokenAsync))]
+        public async Task<HttpResponseData> GetTokenAsync(
+            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequestData req)
         {
             if (!req.Params.TryGetValue("tenantId", out var tenantId))
             {
@@ -47,8 +48,37 @@ namespace DevOidc.Functions.Functions
             var requestModel = req.BindModelToForm<OidcTokenRequestModel>();
 
             var isRefreshToken = requestModel.GrantType == "refresh_token";
+            var isPassword = requestModel.GrantType == "password";
 
-            var code = isRefreshToken ? requestModel.RefreshToken : requestModel.Code;
+            string? code;
+            if (isPassword)
+            {
+                // TODO: merge this code with InteractionFunctions.AuthorizePostbackAsync
+                if (string.IsNullOrEmpty(requestModel.ClientId) || 
+                    string.IsNullOrEmpty(requestModel.UserName) || 
+                    string.IsNullOrEmpty(requestModel.Password) ||
+                    await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client)
+                {
+                    return Response.BadRequest();
+                }
+
+                var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
+                    ?? new ScopeDto { ScopeId = requestModel.ClientId };
+
+                var audience = !string.IsNullOrWhiteSpace(requestModel.Audience) ? requestModel.Audience : scope.ScopeId;
+
+                var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
+                if (user == null)
+                {
+                    return Response.Unauthorized("Username or password is incorrect, or user does not have access to this client.");
+                }
+
+                code = await _sessionService.CreateSessionAsync(tenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, default);
+            }
+            else
+            {
+                code = isRefreshToken ? requestModel.RefreshToken : requestModel.Code;
+            }
 
             if (string.IsNullOrWhiteSpace(code))
             {
