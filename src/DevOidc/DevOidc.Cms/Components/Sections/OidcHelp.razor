@@ -35,6 +35,11 @@
             <li>Any url can be configured as reply url for a client.</li>
         </ul>
 
-        <p><strong>Metadata endpoint</strong></p>
+        <h3>Metadata endpoint</h3>
         <pre>https://devoidc.azurewebsites.net/{tenant-id}/.well-known/openid-configuration</pre>
+
+        <h3>Use <code>grant_type=password</code> to request JWT tokens</h3>
+
+        <p>To easily request JWT tokens for test automation, send a url-encoded form request to <code>https://devoidc.azurewebsites.net/{tenant-id}/token</code>, 
+            containing <code>client_id</code>, <code>username</code>, <code>password</code>, <code>scope</code>, <code>audience</code> (optional), and <code>grant_type</code>.</p>
     </div>
