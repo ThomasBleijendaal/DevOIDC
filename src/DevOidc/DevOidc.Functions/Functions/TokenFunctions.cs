@@ -17,11 +17,11 @@ namespace DevOidc.Functions.Functions
     // TODO: test nonce for refesh tokens
     public class TokenFunctions
     {
-        private readonly IOidcInteraction<IOidcTokenRequest, IOidcToken> _oidcInteraction;
+        private readonly IOidcHandler<IOidcTokenRequest, IOidcToken> _oidcHandler;
 
-        public TokenFunctions(IOidcInteraction<IOidcTokenRequest, IOidcToken> oidcInteraction)
+        public TokenFunctions(IOidcHandler<IOidcTokenRequest, IOidcToken> oidcHandler)
         {
-            _oidcInteraction = oidcInteraction;
+            _oidcHandler = oidcHandler;
         }
 
         [FunctionName(nameof(GetTokenAsync))]
@@ -37,7 +37,7 @@ namespace DevOidc.Functions.Functions
 
             try
             {
-                var response = await _oidcInteraction.InteractionAsync(requestModel.GetRequest(tenantId));
+                var response = await _oidcHandler.HandleAsync(requestModel.GetRequest(tenantId));
 
                 return Response.Json(new TokenResponseModel
                 {

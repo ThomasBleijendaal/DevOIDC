@@ -218,6 +218,7 @@ namespace DevOidc.Cms
                             {
                                 section.AddField(x => x.Id).SetName("Client Id").DisableWhen((m, s) => s == EntityState.IsExisting);
                                 section.AddField(x => x.Name);
+                                section.AddField(x => x.ClientSecret).SetType(DisplayType.Pre).SetName("Secret").DisableWhen((m, s) => true);
                                 section.AddField(x => x.AccessTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in Access Token");
                                 section.AddField(x => x.IdTokenExtraClaims).SetType(typeof(ClaimEditor)).SetName("Extra claims in ID Token");
                                 section.AddField(x => x.Scopes).SetType(typeof(ScopeEditor)).SetName("Allowed scopes");

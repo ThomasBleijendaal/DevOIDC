@@ -33,6 +33,13 @@ namespace DevOidc.Business.Tenant
             return CheckIfUserHasAccessToClient(clientId, user);
         }
 
+        public async Task<ClientDto?> AuthenticateClientAsync(string tenantId, string clientId, string clientSecret)
+        {
+            var client = await _clientRepository.GetAsync(new GetClientBySecretSpecification(tenantId, clientId, clientSecret));
+
+            return client;
+        }
+
         public async Task<UserDto?> GetUserAsync(string tenantId, string clientId, string userId)
         {
             var user = await _userRepository.GetAsync(new GetUserByIdSpecification(tenantId, userId));

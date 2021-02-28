@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Azure.Data.Tables;
 using DevOidc.Business.Abstractions;
+using DevOidc.Business.Abstractions.Request;
+using DevOidc.Business.Handlers;
 using DevOidc.Business.Providers;
 using DevOidc.Business.Scopes;
 using DevOidc.Business.Session;
@@ -82,6 +84,9 @@ namespace DevOidc.Functions
             services.AddTransient<ICommandHandler<CreateClientCommand>, CreateClientCommandHandler>();
             services.AddTransient<ICommandHandler<UpdateClientCommand>, UpdateClientCommandHandler>();
             services.AddTransient<ICommandHandler<DeleteClientCommand>, DeleteClientCommandHandler>();
+
+            services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcToken>, TokenRequestOidcHandler>();
+            services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcSession>, SessionOidcInteraction>();
 
             services.AddHttpContextAccessor();
             services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();

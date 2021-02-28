@@ -13,7 +13,7 @@ namespace DevOidc.Business.Abstractions
 
         Task<UserDto?> AuthenticateUserAsync(string tenantId, string clientId, string userName, string password);
         
-        Task<UserDto?> AuthenticateClientAsync(string tenantId, string clientId, string clientSecret);
+        Task<ClientDto?> AuthenticateClientAsync(string tenantId, string clientId, string clientSecret);
 
         Task<UserDto?> GetUserAsync(string tenantId, string clientId, string userId);
     }

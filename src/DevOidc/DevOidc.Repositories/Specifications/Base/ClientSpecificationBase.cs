@@ -16,7 +16,8 @@ namespace DevOidc.Repositories.Specifications.Base
             ClientId = client.RowKey,
             TenantId = client.PartitionKey,
             RedirectUris = JsonConvert.DeserializeObject<List<string>>(client.RedirectUris ?? "") ?? new List<string>(),
-            Scopes = JsonConvert.DeserializeObject<List<ScopeDto>>(client.Scopes ?? "") ?? new List<ScopeDto>()
+            Scopes = JsonConvert.DeserializeObject<List<ScopeDto>>(client.Scopes ?? "") ?? new List<ScopeDto>(),
+            ClientSecret = client.ClientSecret
         };
     }
 }
