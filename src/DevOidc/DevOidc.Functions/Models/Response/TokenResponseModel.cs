@@ -24,8 +24,5 @@ namespace DevOidc.Functions.Models.Response
 
         [JsonProperty("id_token")] 
         public string? IdToken { get; set; }
-
-        [JsonProperty("client_info")]
-        public string? ClientInfo { get; set; }
     }
 }
