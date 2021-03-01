@@ -10,5 +10,6 @@ namespace DevOidc.Business.Abstractions.Request
         string? Scope { get; }
         IEnumerable<string> Scopes { get; }
         string? Audience { get; }
+        string? ResponseType { get; }
     }
 }

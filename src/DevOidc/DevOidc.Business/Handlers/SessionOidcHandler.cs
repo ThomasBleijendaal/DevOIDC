@@ -10,12 +10,13 @@ using DevOidc.Core.Models.Responses;
 
 namespace DevOidc.Business.Handlers
 {
-    public class SessionOidcInteraction : IOidcHandler<IOidcTokenRequest, IOidcSession>
+
+    public class SessionOidcHandler : IOidcHandler<IOidcTokenRequest, IOidcSession>
     {
         private readonly ITenantService _tenantService;
         private readonly ISessionService _sessionService;
 
-        public SessionOidcInteraction(
+        public SessionOidcHandler(
             ITenantService tenantService,
             ISessionService sessionService)
         {
@@ -65,16 +66,16 @@ namespace DevOidc.Business.Handlers
                 {
                     throw new InvalidRequestException("Client secret is incorrect.");
                 }
-
+                
                 var user = new UserDto
                 {
-                    AccessTokenExtraClaims = new Dictionary<string, string>(),
+                    AccessTokenExtraClaims = clientUser.AccessTokenExtraClaims,
                     Clients = new List<string>
                     {
                         clientUser.ClientId
                     },
                     FullName = clientUser.ClientId,
-                    IdTokenExtraClaims = new Dictionary<string, string>(),
+                    IdTokenExtraClaims = clientUser.IdTokenExtraClaims,
                     Password = string.Empty,
                     UserId = clientUser.ClientId,
                     UserInfoExtraClaims = new Dictionary<string, string>(),
@@ -86,7 +87,6 @@ namespace DevOidc.Business.Handlers
             else if (request is IOidcRefreshTokenRequest refreshTokenRequest)
             {
                 return new OidcSession(refreshTokenRequest.RefreshToken ?? throw new InvalidRequestException());
-                ;
             }
             else if (request is IOidcCodeRequest codeRequest)
             {

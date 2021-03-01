@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json.schemastore.org/proxies",
+  "proxies": {
+    "website": {
+      "matchCondition": {
+        "methods": [ "GET", "POST", "OPTIONS" ],
+        "route": "/"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/index.html"
+    },
+    "content": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/_content/{*asset}"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/_content/{asset}"
+    },
+    "framework": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/_framework/{*asset}"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/_framework/{asset}"
+    },
+    "settings": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/appsettings.json"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/appsettings.json"
+    },
+    "favicon": {
+      "matchCondition": {
+        "methods": [ "GET" ],
+        "route": "/favicon.ico"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/favicon.ico"
+    },
+    "authentication": {
+      "matchCondition": {
+        "methods": [ "GET", "POST", "OPTIONS" ],
+        "route": "/authentication/{*action}"
+      },
+      "backendUri": "https://devoidc.z6.web.core.windows.net/authentication/{action}"
+    }
+  }
+}

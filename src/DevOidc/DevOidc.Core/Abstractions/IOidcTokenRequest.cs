@@ -1,4 +1,6 @@
-﻿namespace DevOidc.Business.Abstractions.Request
+﻿using System.Collections.Generic;
+
+namespace DevOidc.Business.Abstractions.Request
 {
     public interface IOidcTokenRequest
     {

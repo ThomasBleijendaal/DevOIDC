@@ -10,7 +10,7 @@ namespace DevOidc.Functions.Models.Request
         public IOidcTokenRequest GetRequest(string tenantId)
             => GrantType switch
             {
-                "code" => new OidcCodeRequest
+                "authorization_code" => new OidcCodeRequest
                 {
                     Code = Code,
                     RedirectUri = RedirectUri,

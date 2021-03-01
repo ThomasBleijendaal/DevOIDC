@@ -86,7 +86,8 @@ namespace DevOidc.Functions
             services.AddTransient<ICommandHandler<DeleteClientCommand>, DeleteClientCommandHandler>();
 
             services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcToken>, TokenRequestOidcHandler>();
-            services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcSession>, SessionOidcInteraction>();
+            services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcSession>, SessionOidcHandler>();
+            services.AddTransient<IOidcHandler<IOidcTokenRequest, IOidcAuthorization>, AuthorizeOidcHandler>();
 
             services.AddHttpContextAccessor();
             services.AddTransient<IAuthenticationValidator, JwtBearerValidator>();

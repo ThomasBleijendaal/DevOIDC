@@ -70,7 +70,7 @@ namespace DevOidc.Functions.Validators
         {
             var configurationManager = BuildConfigurationManager(instanceUri);
             var accessToken = GetAccessToken();
-            if (string.IsNullOrWhiteSpace(accessToken))
+            if (string.IsNullOrWhiteSpace(accessToken) || accessToken.Split(".").Length < 3)
             {
                 throw new UnauthorizedAccessException("No access token provided.");
             }

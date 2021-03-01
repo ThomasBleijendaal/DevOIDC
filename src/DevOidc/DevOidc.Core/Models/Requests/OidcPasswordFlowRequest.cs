@@ -21,5 +21,7 @@ namespace DevOidc.Core.Models.Requests
         public string? RedirectUri { get; set; }
 
         public string TenantId { get; init; } = default!;
+
+        public string? ResponseType { get; set; }
     }
 }
