@@ -12,6 +12,8 @@ namespace DevOidc.Business.Abstractions
         Task<IEncryptionProvider?> GetEncryptionProviderAsync(string tenantId);
 
         Task<UserDto?> AuthenticateUserAsync(string tenantId, string clientId, string userName, string password);
+        
+        Task<ClientDto?> AuthenticateClientAsync(string tenantId, string clientId, string clientSecret);
 
         Task<UserDto?> GetUserAsync(string tenantId, string clientId, string userId);
     }

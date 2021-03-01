@@ -23,6 +23,7 @@ namespace DevOidc.Repositories.Operations.Client
             client.RedirectUris = JsonConvert.SerializeObject(_command.Client.RedirectUris);
             client.Scopes = JsonConvert.SerializeObject(_command.Client.Scopes);
             client.Name = _command.Client.Name;
+            client.ClientSecret = _command.Client.ClientSecret;
         };
 
         public Expression<Func<ClientEntity, bool>> Criteria => client =>

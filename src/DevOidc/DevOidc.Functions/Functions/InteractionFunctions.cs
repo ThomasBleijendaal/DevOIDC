@@ -6,6 +6,8 @@ using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Web;
 using DevOidc.Business.Abstractions;
+using DevOidc.Business.Abstractions.Request;
+using DevOidc.Core.Exceptions;
 using DevOidc.Core.Models.Dtos;
 using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Extensions;
@@ -22,24 +24,18 @@ namespace DevOidc.Functions.Functions
 {
     public class InteractionFunctions
     {
+        private readonly IOidcHandler<IOidcTokenRequest, IOidcAuthorization> _authorizationHandler;
         private readonly ITenantService _tenantService;
-        private readonly ISessionService _sessionService;
         private readonly IScopeProvider _scopeProvider;
-        private readonly IClaimsProvider _claimsProvider;
-        private readonly IJwtProvider _jwtProvider;
 
         public InteractionFunctions(
+            IOidcHandler<IOidcTokenRequest, IOidcAuthorization> authorizationHandler,
             ITenantService tenantService,
-            ISessionService sessionService,
-            IScopeProvider scopeProvider,
-            IClaimsProvider claimsProvider,
-            IJwtProvider jwtProvider)
+            IScopeProvider scopeProvider)
         {
+            _authorizationHandler = authorizationHandler;
             _tenantService = tenantService;
-            _sessionService = sessionService;
             _scopeProvider = scopeProvider;
-            _claimsProvider = claimsProvider;
-            _jwtProvider = jwtProvider;
         }
 
         [FunctionName(nameof(AuthorizeAsync))]
@@ -110,62 +106,31 @@ namespace DevOidc.Functions.Functions
 
             var requestModel = req.BindModelToForm<OidcAuthorizeRequestModel>();
 
-            if (string.IsNullOrWhiteSpace(requestModel.ClientId) ||
-                string.IsNullOrWhiteSpace(requestModel.RedirectUri) ||
-                string.IsNullOrWhiteSpace(requestModel.UserName) ||
-                string.IsNullOrWhiteSpace(requestModel.Password) ||
-                string.IsNullOrWhiteSpace(requestModel.ResponseType) ||
-                await _tenantService.GetTenantAsync(tenantId) is not TenantDto tenant ||
-                await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
-                !client.RedirectUris.Contains(requestModel.RedirectUri))
+            try
             {
-                return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect configuration was posted to callback.", requestModel);
+                var request = requestModel.GetRequest(tenantId);
+                var authorizationResponse = await _authorizationHandler.HandleAsync(request);
+
+                var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(requestModel, authorizationResponse.Type, authorizationResponse.Value)
+
+                    // web sites etc
+                    : (requestModel.RedirectUri?.StartsWith("http") ?? false) ? RedirectToReplyUrl(requestModel, authorizationResponse.Type, authorizationResponse.Value)
+
+                    // native clients 
+                    : PostToCallbackUrlForm(requestModel, context, authorizationResponse.Type, authorizationResponse.Value);
+
+                response.Headers.Add("Set-Cookie", $"username={requestModel.UserName}");
+
+                return response;
             }
-
-            var scope = client.Scopes.FirstOrDefault(x => requestModel.Scopes.Contains(x.ScopeId))
-                ?? new ScopeDto { ScopeId = requestModel.ClientId };
-
-            var audience = !string.IsNullOrWhiteSpace(requestModel.Audience) ? requestModel.Audience : scope.ScopeId;
-
-            var user = await _tenantService.AuthenticateUserAsync(tenantId, requestModel.ClientId, requestModel.UserName, requestModel.Password);
-            if (user == null)
+            catch (InvalidRequestException ex)
             {
-                return RedirectToLogin(context, tenantId, "invalid_login", "Username or password is incorrect, or user does not have access to this client.", requestModel);
+                return RedirectToLogin(context, tenantId, "invalid_request", ex.Message, requestModel);
             }
-
-            var type = requestModel.ResponseType;
-            var value = default(string);
-            if (type == "id_token")
+            catch (Exception ex)
             {
-                var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenant.TenantId);
-                if (encryptionProvider == null)
-                {
-                    return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect encryption provider for tentant", requestModel);
-                }
-
-                var idTokenClaims = _claimsProvider.CreateIdTokenClaims(user, client, scope.ScopeId, requestModel.Nonce);
-                value = _jwtProvider.CreateJwt(idTokenClaims, tenant.TokenLifetime, encryptionProvider);
+                return RedirectToLogin(context, tenantId, ex.Message, ex.Message, requestModel);
             }
-            else if (type == "code")
-            {
-                value = await _sessionService.CreateSessionAsync(tenant.TenantId, user, client, scope.ScopeId, requestModel.Scopes, audience, requestModel.Nonce);
-            }
-            else
-            {
-                return RedirectToLogin(context, tenantId, "invalid_request", "Response type not supported", requestModel);
-            }
-
-            var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(requestModel, type, value)
-
-                // web sites etc
-                : (requestModel.RedirectUri?.StartsWith("http") ?? false) ? RedirectToReplyUrl(requestModel, type, value)
-
-                // native clients 
-                : PostToCallbackUrlForm(requestModel, context, type, value);
-
-            response.Headers.Add("Set-Cookie", $"username={requestModel.UserName}");
-
-            return response;
         }
 
         [FunctionName(nameof(AuthorizePostbackCallbackAsync))]

@@ -19,6 +19,8 @@ namespace DevOidc.Cms.Core.Models
         [Required]
         public string Name { get; set; } = "";
 
+        public string? ClientSecret { get; set; } = "";
+
         [Required]
         public List<string> RedirectUris { get; set; } = new List<string>();
 

@@ -26,8 +26,6 @@ namespace DevOidc.Functions.Authentication
                             context.InvocationResult = new HttpResponseData(HttpStatusCode.Unauthorized);
                             return;
                         }
-
-                        // TODO: validate user?
                     }
                 }
             }

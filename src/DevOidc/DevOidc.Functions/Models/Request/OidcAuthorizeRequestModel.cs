@@ -1,11 +1,39 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using DevOidc.Business.Abstractions.Request;
+using DevOidc.Core.Models.Requests;
 using Newtonsoft.Json;
 
 namespace DevOidc.Functions.Models.Request
 {
     public class OidcAuthorizeRequestModel : OidcRequestModel
     {
+        public IOidcTokenRequest GetRequest(string tenantId)
+            => new OidcPasswordFlowRequest
+            {
+                Audience = Audience,
+                ClientId = ClientId,
+                Password = Password,
+                RedirectUri = RedirectUri,
+                ResponseType = ResponseType,
+                Scope = Scope,
+                TenantId = tenantId,
+                UserName = UserName
+            };
+
+        public IReadOnlyDictionary<string, string?> LogInFormData() =>
+            new Dictionary<string, string?>
+            {
+                { "client_id", ClientId },
+                { "redirect_uri", RedirectUri },
+                { "scope", Scope },
+                { "audience", Audience },
+                { "response_mode", ResponseMode },
+                { "response_type", ResponseType },
+                { "state", State },
+                { "nonce", Nonce }
+            };
+
         [JsonProperty("audience")]
         public string? Audience { get; set; }
 
@@ -25,19 +53,6 @@ namespace DevOidc.Functions.Models.Request
         public string? Nonce { get; set; }
 
         [JsonProperty("prompt")]
-        public string? Prompt { get; set; }
-
-        public IReadOnlyDictionary<string, string?> LogInFormData() =>
-            new Dictionary<string, string?>
-            {
-                { "client_id", ClientId },
-                { "redirect_uri", RedirectUri },
-                { "scope", Scope },
-                { "audience", Audience },
-                { "response_mode", ResponseMode },
-                { "response_type", ResponseType },
-                { "state", State },
-                { "nonce", Nonce }
-            };
+        public string? Prompt { get; set; }   
     }
 }
