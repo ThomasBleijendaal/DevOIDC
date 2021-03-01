@@ -26,25 +26,16 @@ namespace DevOidc.Functions.Functions
     {
         private readonly IOidcHandler<IOidcTokenRequest, IOidcAuthorization> _authorizationHandler;
         private readonly ITenantService _tenantService;
-        private readonly ISessionService _sessionService;
         private readonly IScopeProvider _scopeProvider;
-        private readonly IClaimsProvider _claimsProvider;
-        private readonly IJwtProvider _jwtProvider;
 
         public InteractionFunctions(
             IOidcHandler<IOidcTokenRequest, IOidcAuthorization> authorizationHandler,
             ITenantService tenantService,
-            ISessionService sessionService,
-            IScopeProvider scopeProvider,
-            IClaimsProvider claimsProvider,
-            IJwtProvider jwtProvider)
+            IScopeProvider scopeProvider)
         {
             _authorizationHandler = authorizationHandler;
             _tenantService = tenantService;
-            _sessionService = sessionService;
             _scopeProvider = scopeProvider;
-            _claimsProvider = claimsProvider;
-            _jwtProvider = jwtProvider;
         }
 
         [FunctionName(nameof(AuthorizeAsync))]
