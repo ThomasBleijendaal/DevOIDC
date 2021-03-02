@@ -111,7 +111,10 @@ namespace DevOidc.Functions
 
         public void ConfigureWorker(IFunctionsWorkerApplicationBuilder builder)
         {
-            builder.UseRequestLogger();
+            if (Configuration.GetValue<bool>("RequestLogger"))
+            {
+                builder.UseRequestLogger();
+            }
 
             builder.UseContextAccessor();
 
