@@ -103,9 +103,9 @@ namespace DevOidc.Cms
                             section.AddField(x => x.Id).SetName("Tenant Id").DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.OwnerName).SetName("Owner").SetType(DisplayType.Pre);
                             
-                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}/.well-known/openid-configuration").SetType(DisplayType.Pre).SetName("Metadata endpoint");
-                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}").SetType(DisplayType.Pre).SetName("Authority");
-                            section.AddField(x => $"https://devoidc.azurewebsites.net/{x.Id}").SetType(DisplayType.Pre).SetName("Issuer / token source");
+                            section.AddField(x => $"https://devoidc.wearetriple.com/{x.Id}/.well-known/openid-configuration").SetType(DisplayType.Pre).SetName("Metadata endpoint");
+                            section.AddField(x => $"https://devoidc.wearetriple.com/{x.Id}").SetType(DisplayType.Pre).SetName("Authority");
+                            section.AddField(x => $"https://devoidc.wearetriple.com/{x.Id}").SetType(DisplayType.Pre).SetName("Issuer / token source");
 
                             section.AddField(x => x.Name).DisableWhen((m, s) => s == EntityState.IsExisting);
                             section.AddField(x => x.Description).DisableWhen((m, s) => s == EntityState.IsExisting);
