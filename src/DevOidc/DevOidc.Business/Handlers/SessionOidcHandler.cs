@@ -47,7 +47,7 @@ namespace DevOidc.Business.Handlers
                     throw new InvalidRequestException("Username or password is incorrect, or user does not have access to this client.");
                 }
 
-                return new OidcSession(await _sessionService.CreateSessionAsync(request.TenantId, user, client, scope.ScopeId, password.Scopes, audience, default));
+                return new OidcSession(await _sessionService.CreateSessionAsync(request.TenantId, user, client, scope.ScopeId, password.Scopes, audience, password.Nonce));
             }
             else if (request is IOidcClientCredentialsRequest clientCredentials)
             {
