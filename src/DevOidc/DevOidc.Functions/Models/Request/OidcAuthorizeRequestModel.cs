@@ -18,7 +18,8 @@ namespace DevOidc.Functions.Models.Request
                 ResponseType = ResponseType,
                 Scope = Scope,
                 TenantId = tenantId,
-                UserName = UserName
+                UserName = UserName,
+                Nonce = Nonce
             };
 
         public IReadOnlyDictionary<string, string?> LogInFormData() =>

@@ -23,5 +23,7 @@ namespace DevOidc.Core.Models.Requests
         public string TenantId { get; init; } = default!;
 
         public string? ResponseType { get; set; }
+
+        public string? Nonce { get; set; }
     }
 }
