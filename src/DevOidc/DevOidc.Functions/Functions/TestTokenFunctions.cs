@@ -7,9 +7,7 @@ using DevOidc.Functions.Authentication;
 using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Responses;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Pipeline;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DevOidc.Functions.Functions
 {
@@ -29,56 +27,55 @@ namespace DevOidc.Functions.Functions
             _claimsProvider = claimsProvider;
         }
 
-        [FunctionName(nameof(TestOidcTokenAsync))]
+        [Function(nameof(TestOidcTokenAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> TestOidcTokenAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequestData req, 
-            FunctionExecutionContext context)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "test/{tenantId}/{clientId}/{scope}")] HttpRequestData req, 
+            string tenantId,
+            string clientId,
+            string scope,
+            FunctionContext context)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId) || !req.Params.TryGetValue("clientId", out var clientId) || !req.Params.TryGetValue("scope", out var scope))
-            {
-                return Response.BadRequest();
-            }
-
             try
             {
+                var authorizationValue = req.Headers.TryGetValue("Authorization", out var headerValue) ? headerValue : "";
                 var instance = new Uri(new Uri(context.GetBaseUri("test")), tenantId);
-                var user = await _authenticationValidator.GetValidUserAsync(instance, clientId, scope);
+                var user = await _authenticationValidator.GetValidUserAsync(authorizationValue, instance, clientId, scope);
 
-                return Response.Json(user.Claims.ToDictionary(x => x.Type, x => x.Value));
+                return req.CreateJsonResponse(user.Claims.ToDictionary(x => x.Type, x => x.Value));
             }
             catch (Exception ex)
             {
-                return Response.Unauthorized(ex.Message);
+                return req.CreateUnauthorizedResponse(ex.Message);
             }
         }
 
-        [FunctionName(nameof(GetUserInfoAsync))]
+        [Function(nameof(GetUserInfoAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> GetUserInfoAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/oidc/userinfo")] HttpRequestData req, FunctionExecutionContext context)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/oidc/userinfo")] HttpRequestData req, 
+            string tenantId,
+            FunctionContext context)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             try
             {
+                var authorizationValue = req.Headers.TryGetValue("Authorization", out var headerValue) ? headerValue : "";
                 var instance = new Uri(context.GetBaseUri("oidc"));
-                var principal = await _authenticationValidator.GetClaimsAysnc(instance);
+                var principal = await _authenticationValidator.GetClaimsAysnc(authorizationValue, instance);
 
                 var user = await _userService.GetUserByIdAsync(tenantId, principal.Claims.First(x => x.Type == "sub").Value);
                 if (user == null)
                 {
-                    return Response.Forbidden();
+                    return req.CreateForbiddenResponse();
                 }
 
                 var claims = _claimsProvider.CreateUserInfoClaims(user);
 
-                return Response.Json(claims);
+                return req.CreateJsonResponse(claims);
             }
             catch (Exception ex)
             {
-                return Response.Unauthorized(ex.Message);
+                return req.CreateUnauthorizedResponse(ex.Message);
             }
         }
     }

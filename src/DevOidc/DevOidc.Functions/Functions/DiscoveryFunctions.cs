@@ -5,9 +5,7 @@ using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Response;
 using DevOidc.Functions.Responses;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Pipeline;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DevOidc.Functions.Functions
 {
@@ -20,24 +18,22 @@ namespace DevOidc.Functions.Functions
             _tenantService = tenantService;
         }
 
-        [FunctionName(nameof(GetMetadataAsync))]
+        [Function(nameof(GetMetadataAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> GetMetadataAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/.well-known/openid-configuration")] HttpRequestData req, FunctionExecutionContext context)
-        {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/.well-known/openid-configuration")] HttpRequestData req, 
+            string tenantId, 
+            FunctionContext context)
+        {   
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant == null)
             {
-                return Response.NotFound();
+                return req.CreateNotFoundResponse();
             }
 
             var baseUri = context.GetBaseUri("/.well-known");
 
-            return Response.Json(new MetadataResponseModel
+            return req.CreateJsonResponse(new MetadataResponseModel
             {
                 TokenEndpoint = $"{baseUri}/token",
                 TokenEndpointAuthMethodsSupported = new[] { "client_secret_post", "private_key_jwt", "client_secret_basic" },
@@ -58,26 +54,24 @@ namespace DevOidc.Functions.Functions
             });
         }
 
-        [FunctionName(nameof(GetKeysAsync))]
+        [Function(nameof(GetKeysAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> GetKeysAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequestData req, FunctionExecutionContext context)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/discovery/keys")] HttpRequestData req, 
+            string tenantId, 
+            FunctionContext context)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             var baseUri = context.GetBaseUri("/discovery/keys");
 
             var encryptionProvider = await _tenantService.GetEncryptionProviderAsync(tenantId);
             if (encryptionProvider == null)
             {
-                return Response.NotFound();
+                return req.CreateNotFoundResponse();
             }
 
             var key = encryptionProvider.GetPublicKey();
 
-            return Response.Json(new KeysResponseModel
+            return req.CreateJsonResponse(new KeysResponseModel
             {
                 Keys = new[]
                 {

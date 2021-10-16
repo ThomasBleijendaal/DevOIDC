@@ -34,7 +34,7 @@ namespace DevOidc.Cms.Core.Repositories
             await _tenantManagementService.DeleteTenantAsync(user.Identity?.Name ?? "-unknown-", id);
         }
 
-        public override async Task<IEnumerable<TenantCmsModel>> GetAllAsync(IParent? parent, IQuery<TenantDto> query)
+        public override async Task<IEnumerable<TenantCmsModel>> GetAllAsync(IParent? parent, IView<TenantDto> query)
         {
             var user = _userResolver.ResolveUser();
             var tenants = await (query.ActiveTab == 1

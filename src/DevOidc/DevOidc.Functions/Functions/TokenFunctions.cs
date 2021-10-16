@@ -9,8 +9,7 @@ using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Models.Response;
 using DevOidc.Functions.Responses;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DevOidc.Functions.Functions
 {
@@ -23,22 +22,19 @@ namespace DevOidc.Functions.Functions
             _oidcHandler = oidcHandler;
         }
 
-        [FunctionName(nameof(GetTokenAsync))]
+        [Function(nameof(GetTokenAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> GetTokenAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/token")] HttpRequestData req,
+            string tenantId)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             var requestModel = req.BindModelToForm<OidcTokenRequestModel>();
 
             try
             {
                 var response = await _oidcHandler.HandleAsync(requestModel.GetRequest(tenantId));
 
-                return Response.Json(new TokenResponseModel
+                return req.CreateJsonResponse(new TokenResponseModel
                 {
                     TokenType = response.TokenType,
                     ExpiresIn = response.ExpiresIn,
@@ -51,7 +47,7 @@ namespace DevOidc.Functions.Functions
             }
             catch (InvalidRequestException ex)
             {
-                return Response.Json(new ErrorResonseModel
+                return req.CreateJsonResponse(new ErrorResonseModel
                 {
                     Error = "invalid_request",
                     ErrorDescription = ex.Message
@@ -59,7 +55,7 @@ namespace DevOidc.Functions.Functions
             }
             catch (InvalidGrantException ex)
             {
-                return Response.Json(new ErrorResonseModel
+                return req.CreateJsonResponse(new ErrorResonseModel
                 {
                     Error = "invalid_grant",
                     ErrorDescription = ex.Message
@@ -67,7 +63,7 @@ namespace DevOidc.Functions.Functions
             }
             catch (Exception)
             {
-                return Response.BadRequest();
+                return req.CreateBadRequestResponse();
             }
         }
     }

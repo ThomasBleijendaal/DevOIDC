@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Threading.Tasks;
-using Microsoft.Azure.Functions.Worker.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
@@ -20,7 +19,7 @@ namespace DevOidc.Functions
                     config.AddCommandLine(args);
                     config.AddEnvironmentVariables();
                 })
-                .ConfigureFunctionsWorker((context, builder) =>
+                .ConfigureFunctionsWorkerDefaults((context, builder) =>
                 {
                     startup ??= new Startup(context.Configuration);
                     startup.ConfigureWorker(builder);

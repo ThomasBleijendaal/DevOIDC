@@ -10,7 +10,7 @@
         {
             var thisIndex = index;
 
-            <div class="form-check" style="padding-left: .25rem; margin-right: -.5rem;">
+            <div class="form-check" style="padding-left: .25rem; margin-right: .25rem;">
                 <div class="row">
                     <div class="col">
                         <input value=@claim.key
@@ -27,7 +27,7 @@
                                @onchange=@((e) => OnChange(thisIndex, false, e.Value as string))
                                class="form-control" />
                     </div>
-                    <div class="col col-md-1">
+                    <div class="col col-auto">
                         <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><Icon Name="Remove" /></button>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
             index++;
         }
 
-        <div class="form-check" style="padding-left: .25rem; margin-right: -.5rem;">
+        <div class="form-check" style="padding-left: .25rem; margin-right: .25rem;">
             <div class="row">
                 <div class="col">
                     <button class="btn btn-light" @onclick=AddRow><Icon Name="Add" /> Add claim</button>
@@ -66,7 +66,7 @@
         StateHasChanged();
     }
 
-    private void OnChange(int index, bool isKey, string? value)
+    private async Task OnChange(int index, bool isKey, string? value)
     {
         if (Claims == null || Claims.Count < index)
         {
@@ -82,7 +82,7 @@
             Claims[index] = (Claims[index].key, value ?? "");
         }
 
-        Update();
+        await Update();
     }
 
     private void AddRow(MouseEventArgs args)
@@ -91,17 +91,17 @@
         StateHasChanged();
     }
 
-    private void RemoveRow(int index)
+    private async Task RemoveRow(int index)
     {
         Claims?.RemoveAt(index);
 
-        Update();
+        await Update();
 
         StateHasChanged();
     }
 
-    private void Update()
+    private async Task Update()
     {
-        SetValueFromObject(Claims?.ToDictionary(x => x.key, x => x.value) ?? new Dictionary<string, string>());
+        await SetValueFromObjectAsync(Claims?.ToDictionary(x => x.key, x => x.value) ?? new Dictionary<string, string>());
     }
 }
