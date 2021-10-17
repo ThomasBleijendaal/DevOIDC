@@ -31,7 +31,7 @@ namespace DevOidc.Cms.Core.Repositories
             await _clientManagementService.DeleteClientAsync(parent.Entity.Id, id);
         }
 
-        public override async Task<IEnumerable<ClientCmsModel>> GetAllAsync(IParent? parent, IQuery<ClientDto> query)
+        public override async Task<IEnumerable<ClientCmsModel>> GetAllAsync(IParent? parent, IView<ClientDto> query)
         {
             if (string.IsNullOrWhiteSpace(parent?.Entity.Id))
             {

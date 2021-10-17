@@ -8,16 +8,16 @@ namespace DevOidc.Functions.Resolvers
 {
     public class UserResolver : IUserResolver
     {
-        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
+        private readonly IFunctionContextAccessor _functionContextAccessor;
 
-        public UserResolver(IFunctionExecutionContextAccessor functionExecutionContextAccessor)
+        public UserResolver(IFunctionContextAccessor functionContextAccessor)
         {
-            _functionExecutionContextAccessor = functionExecutionContextAccessor;
+            _functionContextAccessor = functionContextAccessor;
         }
 
         public ClaimsPrincipal ResolveUser() 
-            => (_functionExecutionContextAccessor.FunctionExecutionContext != null &&
-                _functionExecutionContextAccessor.FunctionExecutionContext.Items.TryGetValue(AuthenticationMiddleware.ContextUser, out var user)
+            => (_functionContextAccessor.FunctionExecutionContext != null &&
+                _functionContextAccessor.FunctionExecutionContext.Items.TryGetValue(AuthenticationMiddleware.ContextUser, out var user)
                     ? user as ClaimsPrincipal
                     : default)
                 ?? throw new UnauthorizedAccessException();

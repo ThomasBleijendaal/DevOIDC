@@ -10,7 +10,7 @@
         {
             var thisIndex = index;
             
-            <div class="form-check" style="padding-left: .25rem; margin-right: -.5rem;">
+            <div class="form-check" style="padding-left: .25rem; margin-right: .25rem;">
                 <div class="row">
                     <div class="col">
                         <input value=@element
@@ -21,7 +21,7 @@
                     </div>
                     @if (!IsDisabled)
                     {
-                        <div class="col col-md-1">
+                        <div class="col col-auto">
                             <button class="btn" @onclick=@((e) => RemoveRow(thisIndex))><Icon Name="Remove" /></button>
                         </div>
                     }
@@ -34,7 +34,7 @@
 
         @if (!IsDisabled)
         {
-            <div class="form-check" style="padding-left: .25rem; margin-right: -.5rem;">
+            <div class="form-check" style="padding-left: .25rem; margin-right: .25rem;">
                 <div class="row">
                     <div class="col">
                         <button class="btn btn-light" @onclick=AddRow><Icon Name="Add" /> Add entry</button>
@@ -63,7 +63,7 @@
         StateHasChanged();
     }
 
-    private void OnChange(int index, string? value)
+    private async Task OnChange(int index, string? value)
     {
         if (List == null || List.Count < index)
         {
@@ -72,7 +72,7 @@
 
         List[index] = value ?? "";
 
-        Update();
+        await Update();
     }
 
     private void AddRow(MouseEventArgs args)
@@ -81,17 +81,17 @@
         StateHasChanged();
     }
 
-    private void RemoveRow(int index)
+    private async Task RemoveRow(int index)
     {
         List?.RemoveAt(index);
 
-        Update();
+        await Update();
 
         StateHasChanged();
     }
 
-    private void Update()
+    private async Task Update()
     {
-        SetValueFromObject(List?.ToList() ?? new List<string>());
+        await SetValueFromObjectAsync(List?.ToList() ?? new List<string>());
     }
 }

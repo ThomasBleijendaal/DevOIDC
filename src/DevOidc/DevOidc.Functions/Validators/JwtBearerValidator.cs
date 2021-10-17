@@ -1,35 +1,28 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Validators
 {
     internal class JwtBearerValidator : IAuthenticationValidator
     {
-        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
         private readonly ILogger<JwtBearerValidator> _logger;
 
-        public JwtBearerValidator(
-            IFunctionExecutionContextAccessor functionExecutionContextAccessor,
-            ILogger<JwtBearerValidator> logger)
+        public JwtBearerValidator(ILogger<JwtBearerValidator> logger)
         {
-            _functionExecutionContextAccessor = functionExecutionContextAccessor;
             _logger = logger;
         }
 
-        public async Task<ClaimsPrincipal> GetClaimsAysnc(Uri instanceUri)
+        public async Task<ClaimsPrincipal> GetClaimsAysnc(string authorizationHeader, Uri instanceUri)
         {
             var configurationManager = BuildConfigurationManager(instanceUri);
-            var accessToken = GetAccessToken();
+            var accessToken = GetAccessToken(authorizationHeader);
             if (string.IsNullOrWhiteSpace(accessToken))
             {
                 throw new UnauthorizedAccessException("No access token provided.");
@@ -66,10 +59,10 @@ namespace DevOidc.Functions.Validators
             }
         }
 
-        public async Task<ClaimsPrincipal> GetValidUserAsync(Uri instanceUri, string clientId, string scope, Uri? validIssuer = default)
+        public async Task<ClaimsPrincipal> GetValidUserAsync(string authorizationHeader, Uri instanceUri, string clientId, string scope, Uri? validIssuer = default)
         {
             var configurationManager = BuildConfigurationManager(instanceUri);
-            var accessToken = GetAccessToken();
+            var accessToken = GetAccessToken(authorizationHeader);
             if (string.IsNullOrWhiteSpace(accessToken) || accessToken.Split(".").Length < 3)
             {
                 throw new UnauthorizedAccessException("No access token provided.");
@@ -118,28 +111,6 @@ namespace DevOidc.Functions.Validators
             return new ConfigurationManager<OpenIdConnectConfiguration>(wellKnownEndpoint, new OpenIdConnectConfigurationRetriever(), documentRetriever);
         }
 
-        private string? GetAccessToken()
-        {
-            if (_functionExecutionContextAccessor.FunctionExecutionContext?.InvocationRequest is InvocationRequest invocation)
-            {
-                var req = invocation.InputData.FirstOrDefault(x => x.Name == "req");
-                if (req?.Data?.Http != null)
-                {
-                    try
-                    {
-                        var request = new Microsoft.Azure.Functions.Worker.HttpRequestData(req.Data.Http);
-
-                        var authorizationHeader = request.Headers.FirstOrDefault(x => x.Key.Equals("authorization", StringComparison.InvariantCultureIgnoreCase));
-                        if (authorizationHeader.Value is string headerValue)
-                        {
-                            return headerValue.Replace("Bearer ", "");
-                        }
-                    }
-                    catch { }
-                }
-            }
-
-            return default;
-        }
+        private string? GetAccessToken(string authorizationHeader) => authorizationHeader.Replace("Bearer ", "");
     }
 }

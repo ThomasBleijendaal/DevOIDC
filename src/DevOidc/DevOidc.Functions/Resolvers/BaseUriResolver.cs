@@ -6,14 +6,14 @@ namespace DevOidc.Functions.Resolvers
 {
     internal class BaseUriResolver : IBaseUriResolver
     {
-        private readonly IFunctionExecutionContextAccessor _functionExecutionContextAccessor;
+        private readonly IFunctionContextAccessor _functionContextAccessor;
 
-        public BaseUriResolver(IFunctionExecutionContextAccessor functionExecutionContextAccessor)
+        public BaseUriResolver(IFunctionContextAccessor functionContextAccessor)
         {
-            _functionExecutionContextAccessor = functionExecutionContextAccessor;
+            _functionContextAccessor = functionContextAccessor;
         }
 
         public string? ResolveBaseUri(string readTo)
-            => _functionExecutionContextAccessor.FunctionExecutionContext?.GetBaseUri(readTo);
+            => _functionContextAccessor.FunctionExecutionContext?.GetBaseUri(readTo);
     }
 }

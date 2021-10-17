@@ -1,87 +1,67 @@
 ﻿using System;
-using Microsoft.Azure.Functions.Worker.Configuration;
+using System.IO;
+using System.Net;
+using DevOidc.Functions.Extensions;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using RapidCMS.Api.Functions.Abstractions;
 
 namespace DevOidc.Functions.Authentication
 {
-    // this class is temporary
     public static class FunctionsWorkerApplicationBuilderExtensions
     {
         public static IFunctionsWorkerApplicationBuilder UseAuthentication(this IFunctionsWorkerApplicationBuilder builder)
-        {
-            builder.Services.AddSingleton<AuthenticationMiddleware>();
-
-            return builder.Use(next =>
-            {
-                return context =>
-                {
-                    var middleware = context.InstanceServices.GetRequiredService<AuthenticationMiddleware>();
-                    return middleware.InvokeAsync(context, next);
-                };
-            });
-        }
+            => builder.UseMiddleware<AuthenticationMiddleware>();
 
         public static IFunctionsWorkerApplicationBuilder UseAuthorization(this IFunctionsWorkerApplicationBuilder builder)
-        {
-            builder.Services.AddSingleton<AuthorizationMiddleware>();
-
-            return builder.Use(next =>
-            {
-                return context =>
-                {
-                    var middleware = context.InstanceServices.GetRequiredService<AuthorizationMiddleware>();
-                    return middleware.InvokeAsync(context, next);
-                };
-            });
-        }
-
-        public static IFunctionsWorkerApplicationBuilder UseContextAccessor(this IFunctionsWorkerApplicationBuilder builder)
-        {
-            return builder.Use(next =>
-            {
-                return context =>
-                {
-                    var accessor = context.InstanceServices.GetRequiredService<IFunctionExecutionContextAccessor>();
-                    accessor.FunctionExecutionContext = context;
-
-                    return next(context);
-                };
-            });
-        }
+            => builder.UseMiddleware<AuthorizationMiddleware>();
 
         public static IFunctionsWorkerApplicationBuilder UseRequestLogger(this IFunctionsWorkerApplicationBuilder builder)
-        {
-            return builder.Use(next =>
+            => builder.UseMiddleware(async (context, next) =>
             {
-                return async context =>
+                await next();
+
+                var logger = context.InstanceServices.GetRequiredService<ILogger<Program>>();
+
+                try
                 {
-                    await next(context);
-
-                    var logger = context.InstanceServices.GetRequiredService<ILogger<Program>>();
-
-                    try
+                    if (context.GetHttpRequestData() is HttpRequestData request)
                     {
-                        var isHttp = context.InvocationRequest.TriggerMetadata.TryGetValue("req", out var request);
+                        var url = request.Url;
+                        var headers = request.Headers;
 
-                        if (isHttp)
-                        {
-                            var url = request.Http?.Url;
-                            var headers = request.Http?.Headers;
-                            var body = request.Http?.Body?.Json ?? request.Http?.Body?.Bytes.Length.ToString();
-                            var response = JsonConvert.SerializeObject(context.InvocationResult);
-
-                            logger.LogInformation("HTTP request: URL: {url} ||| HEADERS: {headers} ||| BODY: {body} ||| RESPONSE: {response}", url, headers, body, response);
-                        }
+                        logger.LogInformation("HTTP request: URL: {url} ||| HEADERS: {headers}", url, headers);
                     }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "Request logger failed");
-                    }
-                };
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Request logger failed");
+                }
             });
-        }
+
+        public static IFunctionsWorkerApplicationBuilder UseCommonExceptions(this IFunctionsWorkerApplicationBuilder builder)
+            => builder.UseMiddleware(async (context, next) =>
+            {
+                try
+                {
+                    await next();
+                }
+                catch (InvalidDataException)
+                {
+                    context.InvokeResult(CreateResponse(context, HttpStatusCode.BadRequest));
+                }
+                catch (InvalidOperationException)
+                {
+                    context.InvokeResult(CreateResponse(context, HttpStatusCode.InternalServerError));
+                }
+            });
+
+        public static IFunctionsWorkerApplicationBuilder UseContextAccessor(this IFunctionsWorkerApplicationBuilder builder)
+            => builder.UseMiddleware<FunctionContextAccessorMiddleware>();
+
+        private static HttpResponseData CreateResponse(FunctionContext context, HttpStatusCode statusCode)
+            => context.GetHttpRequestData()?.CreateResponse(statusCode) ?? throw new Exception();
     }
 }

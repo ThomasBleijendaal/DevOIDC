@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using System.Web;
 using DevOidc.Business.Abstractions;
@@ -14,11 +12,8 @@ using DevOidc.Functions.Extensions;
 using DevOidc.Functions.Models.Request;
 using DevOidc.Functions.Responses;
 using DevOidc.Functions.Views;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Pipeline;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.Functions.Worker.Http;
 
 namespace DevOidc.Functions.Functions
 {
@@ -38,15 +33,12 @@ namespace DevOidc.Functions.Functions
             _scopeProvider = scopeProvider;
         }
 
-        [FunctionName(nameof(AuthorizeAsync))]
+        [Function(nameof(AuthorizeAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> AuthorizeAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize")] HttpRequestData req,
+            string tenantId)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             var userName = default(string);
             if (req.Headers.TryGetValue("cookie", out var cookies))
             {
@@ -55,9 +47,9 @@ namespace DevOidc.Functions.Functions
             }
 
             var requestModel = req.BindModelToQuery<OidcAuthorizeRequestModel>();
-            if (requestModel.Prompt == "none")
+            if (requestModel == null || requestModel.Prompt == "none")
             {
-                return Response.NoContent();
+                return req.CreateNoContentResponse();
             }
 
             var message = requestModel.Error switch
@@ -92,18 +84,16 @@ namespace DevOidc.Functions.Functions
                 message = FormView.Error($"Client <code>{requestModel.ClientId}</code> only supports <code>response_type=form_post</code> or <code>response_type=fragment</code> or <code>response_type=query</code>.");
             }
 
-            return Response.Html(FormView.RenderHtml(LogInForm(requestModel, message, userName)));
+            return req.CreateHtmlResponse(FormView.RenderHtml(LogInForm(requestModel, message, userName)));
         }
 
-        [FunctionName(nameof(AuthorizePostbackAsync))]
+        [Function(nameof(AuthorizePostbackAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> AuthorizePostbackAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequestData req, FunctionExecutionContext context)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "{tenantId}/authorize")] HttpRequestData req,
+        string tenantId,
+        FunctionContext context)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             var requestModel = req.BindModelToForm<OidcAuthorizeRequestModel>();
 
             try
@@ -111,13 +101,13 @@ namespace DevOidc.Functions.Functions
                 var request = requestModel.GetRequest(tenantId);
                 var authorizationResponse = await _authorizationHandler.HandleAsync(request);
 
-                var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(requestModel, authorizationResponse.Type, authorizationResponse.Value)
+                var response = requestModel.ResponseMode == "form_post" ? PostToReplyUrlForm(req, requestModel, authorizationResponse.Type, authorizationResponse.Value)
 
                     // web sites etc
-                    : (requestModel.RedirectUri?.StartsWith("http") ?? false) ? RedirectToReplyUrl(requestModel, authorizationResponse.Type, authorizationResponse.Value)
+                    : (requestModel.RedirectUri?.StartsWith("http") ?? false) ? RedirectToReplyUrl(req, requestModel, authorizationResponse.Type, authorizationResponse.Value)
 
                     // native clients 
-                    : PostToCallbackUrlForm(requestModel, context, authorizationResponse.Type, authorizationResponse.Value);
+                    : PostToCallbackUrlForm(req, requestModel, context, authorizationResponse.Type, authorizationResponse.Value);
 
                 response.Headers.Add("Set-Cookie", $"username={requestModel.UserName}");
 
@@ -125,23 +115,21 @@ namespace DevOidc.Functions.Functions
             }
             catch (InvalidRequestException ex)
             {
-                return RedirectToLogin(context, tenantId, "invalid_request", ex.Message, requestModel);
+                return RedirectToLogin(req, context, tenantId, "invalid_request", ex.Message, requestModel);
             }
             catch (Exception ex)
             {
-                return RedirectToLogin(context, tenantId, ex.Message, ex.Message, requestModel);
+                return RedirectToLogin(req, context, tenantId, ex.Message, ex.Message, requestModel);
             }
         }
 
-        [FunctionName(nameof(AuthorizePostbackCallbackAsync))]
+        [Function(nameof(AuthorizePostbackCallbackAsync))]
+        [AllowAnonymous]
         public async Task<HttpResponseData> AuthorizePostbackCallbackAsync(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize/callback")] HttpRequestData req, FunctionExecutionContext context)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/authorize/callback")] HttpRequestData req,
+            string tenantId,
+            FunctionContext context)
         {
-            if (!req.Params.TryGetValue("tenantId", out var tenantId))
-            {
-                return Response.BadRequest();
-            }
-
             var requestModel = req.BindModelToQuery<OidcAuthorizeCallbackRequestModel>();
 
             if (string.IsNullOrWhiteSpace(requestModel.ClientId) ||
@@ -151,22 +139,23 @@ namespace DevOidc.Functions.Functions
                 await _tenantService.GetClientAsync(tenantId, requestModel.ClientId) is not ClientDto client ||
                 !client.RedirectUris.Contains(requestModel.RedirectUri))
             {
-                return RedirectToLogin(context, tenantId, "invalid_request", "Incorrect configuration was posted to callback.", requestModel);
+                return RedirectToLogin(req, context, tenantId, "invalid_request", "Incorrect configuration was posted to callback.", requestModel);
             }
 
             var type = string.IsNullOrWhiteSpace(requestModel.Code) ? "id_token" : "code";
             var value = type == "id_token" ? requestModel.IdToken : requestModel.Code;
 
-            return RedirectToReplyUrl(requestModel, type, value);
+            return RedirectToReplyUrl(req, requestModel, type, value);
         }
 
-        [FunctionName(nameof(SignOut))]
+        [Function(nameof(SignOut))]
+        [AllowAnonymous]
         public HttpResponseData SignOut(
-            [AllowAnonymous][HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req)
-            => RedirectToClientApp(req.BindModelToQuery<OidcLogoutRequestModel>());
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "{tenantId}/logout")] HttpRequestData req)
+            => RedirectToClientApp(req, req.BindModelToQuery<OidcLogoutRequestModel>());
 
-        private static HttpResponseData RedirectToLogin(FunctionExecutionContext context, string tenantId, string error, string errorDescription, OidcRequestModel request)
-            => Response.Found($"{context.GetBaseUri(tenantId)}{tenantId}/authorize?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}&{GenerateOidcData(request)}");
+        private static HttpResponseData RedirectToLogin(HttpRequestData req, FunctionContext context, string tenantId, string error, string errorDescription, OidcRequestModel request)
+            => req.CreateFoundResponse($"{context.GetBaseUri(tenantId)}{tenantId}/authorize?error={error}&error_description={HttpUtility.UrlEncode(errorDescription)}&{GenerateOidcData(request)}");
 
         private static string GenerateOidcData(OidcRequestModel m)
             => $"client_id={m.ClientId}&scope={m.Scope}&redirect_uri={HttpUtility.UrlEncode(m.RedirectUri)}&response_type={m.ResponseType}&response_mode={m.ResponseMode}";
@@ -182,8 +171,8 @@ namespace DevOidc.Functions.Functions
                 "Sign in",
                 message);
 
-        private static HttpResponseData RedirectToClientApp(OidcLogoutRequestModel logoutModel)
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+        private static HttpResponseData RedirectToClientApp(HttpRequestData req, OidcLogoutRequestModel logoutModel)
+            => req.CreateHtmlResponse(FormView.RenderHtml(FormView.RenderForm(
                 new Dictionary<string, string?>
                 {
                     { "state", logoutModel.State }
@@ -194,8 +183,8 @@ namespace DevOidc.Functions.Functions
                 logoutModel.LogoutRedirectUri,
                 method: "get")));
 
-        private static HttpResponseData PostToCallbackUrlForm(OidcAuthorizeRequestModel requestModel, FunctionExecutionContext context, string type, string? value)
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+        private static HttpResponseData PostToCallbackUrlForm(HttpRequestData req, OidcAuthorizeRequestModel requestModel, FunctionContext context, string type, string? value)
+            => req.CreateHtmlResponse(FormView.RenderHtml(FormView.RenderForm(
                 new Dictionary<string, string?>
                 {
                     { "client_id", requestModel.ClientId },
@@ -212,8 +201,8 @@ namespace DevOidc.Functions.Functions
                 url: $"{context.GetBaseUri()}/callback",
                 method: "get")));
 
-        private static HttpResponseData PostToReplyUrlForm(OidcAuthorizeRequestModel requestModel, string type, string? value)
-            => Response.Html(FormView.RenderHtml(FormView.RenderForm(
+        private static HttpResponseData PostToReplyUrlForm(HttpRequestData req, OidcAuthorizeRequestModel requestModel, string type, string? value)
+            => req.CreateHtmlResponse(FormView.RenderHtml(FormView.RenderForm(
                 new Dictionary<string, string?>
                 {
                     { "state", requestModel.State },
@@ -224,8 +213,8 @@ namespace DevOidc.Functions.Functions
                 default,
                 requestModel.RedirectUri)));
 
-        private static HttpResponseData RedirectToReplyUrl(OidcRequestModel requestModel, string type, string? value)
-            => Response.Found($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel, type, value)}");
+        private static HttpResponseData RedirectToReplyUrl(HttpRequestData req, OidcRequestModel requestModel, string type, string? value)
+            => req.CreateFoundResponse($"{requestModel.RedirectUri}{(requestModel.ResponseMode == "fragment" ? "#" : "?")}{GenerateQueryData(requestModel, type, value)}");
 
         private static string GenerateQueryData(OidcRequestModel requestModel, string type, string? value)
         {

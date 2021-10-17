@@ -28,7 +28,7 @@ using DevOidc.Repositories.Handlers.User;
 using DevOidc.Repositories.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.Azure.Functions.Worker.Configuration;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -111,17 +111,17 @@ namespace DevOidc.Functions
 
         public void ConfigureWorker(IFunctionsWorkerApplicationBuilder builder)
         {
+            builder.UseContextAccessor();
+
+            builder.UseCommonExceptions();
+
             if (Configuration.GetValue<bool>("RequestLogger"))
             {
                 builder.UseRequestLogger();
             }
 
-            builder.UseContextAccessor();
-
             builder.UseAuthentication();
             builder.UseAuthorization();
-
-            builder.UseFunctionExecutionMiddleware();
         }
     }
 

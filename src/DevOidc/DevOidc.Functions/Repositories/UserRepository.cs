@@ -39,7 +39,7 @@ namespace DevOidc.Cms.Core.Repositories
             await _userManagementService.DeleteUserAsync(parent.Entity.Id, id);
         }
 
-        public override async Task<IEnumerable<UserCmsModel>> GetAllAsync(IParent? parent, IQuery<UserDto> query)
+        public override async Task<IEnumerable<UserCmsModel>> GetAllAsync(IParent? parent, IView<UserDto> query)
         {
             if (string.IsNullOrWhiteSpace(parent?.Entity.Id))
             {

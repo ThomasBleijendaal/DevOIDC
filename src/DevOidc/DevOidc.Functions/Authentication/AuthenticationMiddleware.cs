@@ -1,13 +1,14 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using DevOidc.Functions.Abstractions;
-using Microsoft.Azure.Functions.Worker.Pipeline;
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using DevOidc.Functions.Extensions;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Options;
 
 namespace DevOidc.Functions.Authentication
 {
-    public class AuthenticationMiddleware
+    public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     {
         public const string ContextUser = "User";
 
@@ -22,26 +23,23 @@ namespace DevOidc.Functions.Authentication
             _authenticationValidator = authenticationValidator;
         }
 
-        public async Task InvokeAsync(FunctionExecutionContext context, FunctionExecutionDelegate next)
+        public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
         {
-            if (context.InvocationRequest is InvocationRequest invocation)
+            if (context.GetHttpRequestData() is HttpRequestData request &&
+                request.Headers.TryGetValue("Authorization", out var authorizationHeader))
             {
-                var req = invocation.InputData.FirstOrDefault(x => x.Name == "req");
-
-                if (req?.Data?.Http != null)
+                try
                 {
-                    try
-                    {
-                        var user = await _authenticationValidator.GetValidUserAsync(
-                            _authenticationConfig.Authority, 
-                            _authenticationConfig.ClientId, 
-                            _authenticationConfig.ValidAudience, 
-                            _authenticationConfig.ValidIssuer);
+                    var user = await _authenticationValidator.GetValidUserAsync(
+                        authorizationHeader,
+                        _authenticationConfig.Authority,
+                        _authenticationConfig.ClientId,
+                        _authenticationConfig.ValidAudience,
+                        _authenticationConfig.ValidIssuer);
 
-                        context.Items.Add(AuthenticationMiddleware.ContextUser, user);
-                    }
-                    catch { }
+                    context.Items.Add(ContextUser, user);
                 }
+                catch { }
             }
 
             await next(context);
