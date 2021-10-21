@@ -32,6 +32,7 @@ namespace DevOidc.Functions.Models.Request
                 { "response_mode", ResponseMode },
                 { "response_type", ResponseType },
                 { "state", State },
+                { "session_state", SessionState },
                 { "nonce", Nonce }
             };
 

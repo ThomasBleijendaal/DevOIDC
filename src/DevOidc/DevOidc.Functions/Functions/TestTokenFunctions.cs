@@ -39,7 +39,7 @@ namespace DevOidc.Functions.Functions
             try
             {
                 var authorizationValue = req.Headers.TryGetValue("Authorization", out var headerValue) ? headerValue : "";
-                var instance = new Uri(new Uri(context.GetBaseUri("test")), tenantId);
+                var instance = new Uri(new Uri(context.GetBaseUri("/test")), tenantId);
                 var user = await _authenticationValidator.GetValidUserAsync(authorizationValue, instance, clientId, scope);
 
                 return req.CreateJsonResponse(user.Claims.ToDictionary(x => x.Type, x => x.Value));
@@ -60,7 +60,7 @@ namespace DevOidc.Functions.Functions
             try
             {
                 var authorizationValue = req.Headers.TryGetValue("Authorization", out var headerValue) ? headerValue : "";
-                var instance = new Uri(context.GetBaseUri("oidc"));
+                var instance = new Uri(context.GetBaseUri("/oidc"));
                 var principal = await _authenticationValidator.GetClaimsAysnc(authorizationValue, instance);
 
                 var user = await _userService.GetUserByIdAsync(tenantId, principal.Claims.First(x => x.Type == "sub").Value);

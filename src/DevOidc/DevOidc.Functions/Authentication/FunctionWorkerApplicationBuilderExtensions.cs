@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using DevOidc.Core.Exceptions;
 using DevOidc.Functions.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -55,6 +56,14 @@ namespace DevOidc.Functions.Authentication
                 catch (InvalidOperationException)
                 {
                     context.InvokeResult(CreateResponse(context, HttpStatusCode.InternalServerError));
+                }
+                catch (InvalidRequestException)
+                {
+                    context.InvokeResult(CreateResponse(context, HttpStatusCode.BadRequest));
+                }
+                catch (InvalidGrantException)
+                {
+                    context.InvokeResult(CreateResponse(context, HttpStatusCode.BadRequest));
                 }
             });
 

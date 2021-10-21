@@ -41,5 +41,8 @@
         <h3>Use <code>grant_type=password</code> to request JWT tokens</h3>
 
         <p>To easily request JWT tokens for test automation, send a url-encoded form request to <code>https://devoidc.wearetriple.com/{tenant-id}/token</code>, 
-            containing <code>client_id</code>, <code>username</code>, <code>password</code>, <code>scope</code>, <code>audience</code> (optional), and <code>grant_type</code>.</p>
+            containing <code>client_id</code>, <code>username</code>, <code>password</code>, <code>scope=openid profile offline_access</code>, <code>audience</code> (optional), 
+            and <code>grant_type=password</code>.</p>
+
+
     </div>
